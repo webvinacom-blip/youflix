@@ -384,6 +384,11 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [newTitle, setNewTitle] = useState('');
+  const [newVideoId, setNewVideoId] = useState('');
+  const [newCategory, setNewCategory] = useState('Hành động');
+  const [newDesc, setNewDesc] = useState('');
+  const [newIsFull, setNewIsFull] = useState(false);
 
   const fetchVideoInfo = async (videoId) => {
     try {
@@ -764,41 +769,43 @@ useEffect(() => {
   }, [user]);
 
 const handleAddMovie = async (e) => {
-    e.preventDefault();
-    
-    // Lấy dữ liệu từ form (giả định các ô input có id hoặc state tương ứng)
-    const titleInput = document.getElementById('movieTitleInput')?.value || 'Phim mới';
-    const videoIdInput = document.getElementById('movieVideoIdInput')?.value || 'dQw4w9WgXcQ';
-    const categoryInput = document.getElementById('movieCategoryInput')?.value || 'Hành động';
-    const descInput = document.getElementById('movieDescInput')?.value || '';
-    const isFullInput = document.getElementById('movieIsFullInput')?.checked || false;
+  e.preventDefault();
+  
+  if (!newTitle.trim() || !newVideoId.trim()) {
+    alert("Vui lòng nhập tên phim và mã video YouTube!");
+    return;
+  }
 
-    const newMovie = {
-      id: Date.now().toString(),
-      title: titleInput,
-      videoId: videoIdInput,
-      category: categoryInput,
-      description: descInput,
-      isFull: isFullInput
-    };
-
-    try {
-      // 1. Lưu trực tiếp lên Cloud Firestore
-      if (db) {
-        const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', newMovie.id);
-        await setDoc(movieDocRef, newMovie);
-      }
-      
-      // 2. Cập nhật giao diện cục bộ
-      setMovies(prev => [newMovie, ...prev]);
-      
-      // 3. Đóng modal thêm phim
-      setIsAddModalOpen(false);
-    } catch (error) {
-      console.error("Lỗi khi thêm phim lên Firestore:", error);
-      alert("Có lỗi xảy ra khi lưu phim, vui lòng thử lại!");
-    }
+  const newMovie = {
+    id: Date.now().toString(),
+    title: newTitle.trim(),
+    videoId: newVideoId.trim(),
+    category: newCategory,
+    description: newDesc.trim() || 'Mô tả bộ phim.',
+    isFull: newIsFull
   };
+
+  try {
+    // Lưu trực tiếp lên Cloud Firestore
+    if (db) {
+      const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', newMovie.id);
+      await setDoc(movieDocRef, newMovie);
+    }
+    
+    // Cập nhật giao diện và đóng modal
+    setMovies(prev => [newMovie, ...prev]);
+    setIsAddModalOpen(false);
+    
+    // Reset form
+    setNewTitle('');
+    setNewVideoId('');
+    setNewDesc('');
+    setNewIsFull(false);
+  } catch (error) {
+    console.error("Lỗi khi thêm phim lên Firestore:", error);
+    alert("Có lỗi xảy ra khi lưu phim lên mây!");
+  }
+};
 
   const handleDeleteRequest = (id) => {
     setMovieToDelete(id);
@@ -909,14 +916,85 @@ const heroMovie = filteredMovies.length > 0 ? filteredMovies[0] : null;
         />
       )}
       
-      {isAddModalOpen && (
-        <AddMovieModal 
-          categories={dynamicCategories}
-          existingMovies={movies}
-          onClose={() => setIsAddModalOpen(false)} 
-          onAddMovies={handleAddMovies}
-        />
-      )}
+{isAddModalOpen && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+    <form onSubmit={handleAddMovie} className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 w-full max-w-md shadow-2xl">
+      <h3 className="text-xl font-bold text-white mb-4">Thêm phim mới</h3>
+      
+      <div className="space-y-4">
+        <div>
+          <label className="block text-xs font-medium text-zinc-400 mb-1">Tên phim</label>
+          <input 
+            type="text" 
+           value={newTitle} 
+           onChange={(e) => setNewTitle(e.target.value)}
+           placeholder="Nhập tên phim..."
+           required
+           className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-zinc-400 mb-1">Mã Video YouTube (videoId)</label>
+          <input 
+            type="text" 
+            value={newVideoId} 
+            onChange={(e) => setNewVideoId(e.target.value)}
+            placeholder="Ví dụ: dQw4w9WgXcQ"
+            required
+            className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-zinc-400 mb-1">Thể loại</label>
+          <select 
+            id="movieCategoryInput"
+            className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
+          >
+            {categories.filter(c => c !== 'Tất cả').map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-zinc-400 mb-1">Mô tả ngắn</label>
+          <textarea 
+            id="movieDescInput"
+            placeholder="Nhập mô tả..."
+            className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600 resize-none h-20"
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input 
+            type="checkbox" 
+            id="movieIsFullInput"
+            className="w-4 h-4 accent-red-600"
+          />
+          <label htmlFor="movieIsFullInput" className="text-sm text-zinc-300 cursor-pointer">Đã Full bộ / Trọn bộ</label>
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-3 mt-6">
+        <button 
+          type="button" 
+          onClick={() => setIsAddModalOpen(false)}
+          className="px-4 py-2 rounded bg-zinc-800 hover:bg-zinc-700 text-white text-sm transition"
+        >
+          Hủy
+        </button>
+        <button 
+          type="submit" 
+          className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition"
+        >
+          Thêm phim
+        </button>
+      </div>
+    </form>
+  </div>
+)}
 
       <ConfirmDialog 
         isOpen={!!movieToDelete}
