@@ -3,6 +3,8 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from 'firebase/firestore';
 import { getAnalytics } from "firebase/analytics";
+import { db, appId } from './firebase'; // Hoặc đường dẫn file cấu hình firebase của bạn
+import { collection, doc, setDoc, onSnapshot } from 'firebase/firestore';
 
 // --- Cấu hình Firebase của riêng bạn ---
 const firebaseConfig = {
@@ -670,6 +672,32 @@ useEffect(() => {
     }
     return [];
   });
+
+  useEffect(() => {
+    if (!db) return;
+
+    try {
+      const moviesCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'movies');
+      
+      const unsubscribe = onSnapshot(moviesCollectionRef, (snapshot) => {
+        const cloudMovies = [];
+        snapshot.forEach((doc) => {
+          cloudMovies.push(doc.data());
+        });
+        
+        if (cloudMovies.length > 0) {
+          cloudMovies.sort((a, b) => Number(b.id) - Number(a.id));
+          setMovies(cloudMovies);
+        }
+      }, (error) => {
+        console.error("Lỗi đọc dữ liệu từ Firestore:", error);
+      });
+
+      return () => unsubscribe();
+    } catch (err) {
+      console.error("Lỗi khởi tạo kết nối Firestore:", err);
+    }
+  }, []);
   
   const [currentCategory, setCategory] = useState('Tất cả');
   const [searchQuery, setSearchQuery] = useState('');
@@ -702,6 +730,17 @@ useEffect(() => {
         console.error("Lỗi xác thực:", error);
       }
     };
+
+    const saveMovieToCloud = async (newMovie) => {
+    if (db) {
+      try {
+        const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', newMovie.id);
+        await setDoc(movieDocRef, newMovie);
+      } catch (err) {
+        console.error("Lỗi lưu phim lên Firestore:", err);
+      }
+    }
+  };
     initAuth();
     
     const unsubscribe = onAuthStateChanged(auth, setUser);
