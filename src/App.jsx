@@ -777,16 +777,16 @@ export default function App() {
 
   return (
 <div className="min-h-screen bg-[#141414] text-white overflow-x-hidden font-sans w-full">
-  <Navbar 
-    categories={dynamicCategories}
-    currentCategory={currentCategory}
-    setCategory={setCategory}
-    searchQuery={searchQuery}
-    setSearchQuery={setSearchQuery}
-    onOpenAdd={() => setIsAddModalOpen(true)}
-    showOnlyFull={showOnlyFull}
-    setShowOnlyFull={setShowOnlyFull}
-  />
+    <Navbar 
+      categories={dynamicCategories}
+      currentCategory={currentCategory}
+      setCategory={setCategory}
+      searchQuery={searchQuery}
+      setSearchQuery={setSearchQuery}
+      onOpenAdd={() => setIsAddModalOpen(true)}
+      showOnlyFull={showOnlyFull}
+      setShowOnlyFull={setShowOnlyFull}
+    />
 
   <main className="w-full pb-20">
         {!searchQuery && currentCategory === 'Tất cả' && <Hero movie={heroMovie} onPlay={setSelectedMovie} />}
