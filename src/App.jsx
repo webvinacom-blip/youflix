@@ -771,28 +771,26 @@ useEffect(() => {
 const handleAddMovie = async (e) => {
   e.preventDefault();
   
+  if (!newTitle.trim() || !newVideoId.trim()) {
+    alert("Vui lòng nhập tên phim và mã video YouTube!");
+    return;
+  }
+
+  const newMovie = {
+    id: Date.now().toString(),
+    title: newTitle.trim(),
+    videoId: newVideoId.trim(),
+    category: newCategory,
+    description: newDesc.trim() || 'Mô tả bộ phim.',
+    isFull: newIsFull
+  };
+
   try {
-    if (!newTitle.trim() || !newVideoId.trim()) {
-      alert("Vui lòng nhập tên phim và mã video YouTube!");
-      return;
-    }
-
-    const newMovie = {
-      id: Date.now().toString(),
-      title: newTitle.trim(),
-      videoId: newVideoId.trim(),
-      category: newCategory,
-      description: newDesc.trim() || 'Mô tả bộ phim.',
-      isFull: newIsFull
-    };
-
-    // Lưu trực tiếp lên Cloud Firestore
     if (db) {
       const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', newMovie.id);
       await setDoc(movieDocRef, newMovie);
     }
     
-    // Cập nhật giao diện và đóng modal
     setMovies(prev => [newMovie, ...prev]);
     setIsAddModalOpen(false);
     
@@ -803,7 +801,7 @@ const handleAddMovie = async (e) => {
     setNewIsFull(false);
   } catch (error) {
     console.error("Lỗi khi thêm phim:", error);
-    alert("Có lỗi xảy ra khi thêm phim, vui lòng thử lại!");
+    alert("Có lỗi xảy ra khi lưu phim lên mây!");
   }
 };
 
@@ -924,26 +922,25 @@ const heroMovie = filteredMovies.length > 0 ? filteredMovies[0] : null;
       <div className="space-y-4">
         <div>
           <label className="block text-xs font-medium text-zinc-400 mb-1">Tên phim</label>
-          <input 
-            type="text" 
-           value={newTitle} 
-           onChange={(e) => setNewTitle(e.target.value)}
-           placeholder="Nhập tên phim..."
-           required
-           className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
-          />
-        </div>
+<input 
+  type="text" 
+  value={newTitle} 
+  onChange={(e) => setNewTitle(e.target.value)}
+  placeholder="Nhập tên phim..."
+  required
+  className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
+/>
 
         <div>
           <label className="block text-xs font-medium text-zinc-400 mb-1">Mã Video YouTube (videoId)</label>
-          <input 
-            type="text" 
-            value={newVideoId} 
-            onChange={(e) => setNewVideoId(e.target.value)}
-            placeholder="Ví dụ: dQw4w9WgXcQ"
-            required
-            className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
-          />
+<input 
+  type="text" 
+  value={newVideoId} 
+  onChange={(e) => setNewVideoId(e.target.value)}
+  placeholder="Ví dụ: dQw4w9WgXcQ"
+  required
+  className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
+/>
         </div>
 
         <div>
