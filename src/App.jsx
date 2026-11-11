@@ -235,15 +235,17 @@ function MovieRow({ title, movies, onMovieClick, onDeleteMovie }) {
   if (movies.length === 0) return null;
   
   return (
-    <div className="mb-8 relative">
-      <h2 className="text-xl font-bold text-white mb-4 px-8">{title}</h2>
-      {/* Khung hiển thị phim dạng cuộn dọc, flex-wrap, giới hạn chiều cao 2 dòng */}
+    <div className="mb-8 w-full">
+      <h2 className="text-xl font-bold text-white mb-4 px-4 md:px-8">{title}</h2>
+      {/* Trên điện thoại hiển thị cuộn ngang mượt mà, trên máy tính hiển thị tối ưu */}
       <div 
-        className="flex flex-wrap gap-4 pb-4 px-8 max-h-[350px] overflow-y-auto scroll-smooth"
-        style={{ scrollbarWidth: 'thin' }}
+        className="flex gap-4 pb-4 px-4 md:px-8 overflow-x-auto scroll-smooth w-full no-scrollbar"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {movies.map(movie => (
-          <MovieCard key={movie.id} movie={movie} onClick={onMovieClick} onDelete={onDeleteMovie} />
+          <div key={movie.id} className="shrink-0 w-[220px] sm:w-64">
+            <MovieCard movie={movie} onClick={onMovieClick} onDelete={onDeleteMovie} />
+          </div>
         ))}
       </div>
     </div>
