@@ -4,7 +4,6 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from 'firebase/firestore';
 import { getAnalytics } from "firebase/analytics";
 import { db, appId } from './firebase'; // Hoặc đường dẫn file cấu hình firebase của bạn
-import { collection, doc, setDoc, onSnapshot } from 'firebase/firestore';
 
 // --- Cấu hình Firebase của riêng bạn ---
 const firebaseConfig = {
