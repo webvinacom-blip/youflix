@@ -1,24 +1,27 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from 'firebase/firestore';
+import { getAnalytics } from "firebase/analytics";
 
-// Firebase Setup với cơ chế kiểm tra an toàn nếu chạy ngoài môi trường Canvas
-let app, auth, db, appId = 'default-app-id';
-let useCloud = false;
+// --- Cấu hình Firebase của riêng bạn ---
+const firebaseConfig = {
+  apiKey: "AIzaSyCFHM0yidEmIRU0DgSsYr721J1QfRFQJ0M",
+  authDomain: "youflix-shared.firebaseapp.com",
+  projectId: "youflix-shared",
+  storageBucket: "youflix-shared.appspot.com",
+  messagingSenderId: "309437656302",
+  appId: "1:309437656302:web:4365301530338d0a1c97ff",
+  measurementId: "G-QGZG1IMPZR"
+};
 
-try {
-  if (typeof __firebase_config !== 'undefined') {
-    const firebaseConfig = JSON.parse(__firebase_config);
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    db = getFirestore(app);
-    appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-    useCloud = true;
-  }
-} catch (e) {
-  console.warn("Running in standalone mode (LocalStorage fallback active)");
-}
+// Khởi tạo Firebase trực tiếp để dùng chung cho mọi người
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const auth = getAuth(app);
+const db = getFirestore(app);
+let appId = 'youflix-shared-room-v3';
+let useCloud = true;
 
 // --- Icons ---
 const Search = ({ size = 24, className = "" }) => (
