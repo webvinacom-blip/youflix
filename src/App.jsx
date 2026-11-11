@@ -3,9 +3,11 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from 'firebase/firestore';
 
-// Khởi tạo an toàn để tránh sập màn hình đen
-let app, auth, db;
-let useCloud = true;
+// --- Khởi tạo an toàn tuyệt đối tránh màn hình đen ---
+let app = null;
+let auth = null;
+let db = null;
+let useCloud = false;
 let appId = 'youflix-shared-room-v2';
 
 try {
@@ -14,11 +16,11 @@ try {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
-    appId = typeof __app_id !== 'undefined' ? __app_id : 'youflix-shared-room-v1';
+    appId = typeof __app_id !== 'undefined' ? __app_id : 'youflix-shared-room-v2';
     useCloud = true;
   }
 } catch (e) {
-  console.warn("Running in LocalStorage fallback mode due to missing cloud config");
+  console.warn("Running in stable LocalStorage mode");
 }
 
 // --- Icons ---
@@ -653,15 +655,12 @@ export default function App() {
     }
   }, []);
 
-  const [movies, setMovies] = useState(() => {
-    if (!useCloud) {
-      const saved = localStorage.getItem('youflix_movies_v2');
-      if (saved) {
-        try { return JSON.parse(saved); } catch (e) { /* ignore */ }
-      }
-      return initialMovies;
+const [movies, setMovies] = useState(() => {
+    const saved = localStorage.getItem('youflix_movies_v2');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { /* ignore */ }
     }
-    return [];
+    return initialMovies;
   });
   
   const [currentCategory, setCategory] = useState('Tất cả');
