@@ -150,28 +150,28 @@ function Hero({ movie, onPlay }) {
   if (!movie) return null;
   
   return (
-    <div className="relative w-full h-[70vh] min-h-[500px] mb-8">
+    <div className="relative w-full h-[70vh] min-h-[500px] mb-8 overflow-hidden">
       <div className="absolute inset-0 w-full h-full">
         <img 
           src={getHighResThumbnail(movie.videoId)} 
           alt={movie.title}
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent"></div>
       </div>
       
-      <div className="absolute bottom-[15%] left-8 md:left-16 max-w-2xl">
+      <div className="absolute bottom-[15%] left-8 md:left-16 max-w-2xl z-20">
         <div className="flex items-center gap-3 mb-4">
           <span className="text-green-500 font-bold text-sm">98% Phù hợp</span>
           <span className="border border-zinc-500 text-zinc-300 text-xs px-2 py-0.5 rounded-sm">4K</span>
           {movie.isFull && <span className="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider">Đã Full</span>}
           <span className="text-zinc-300 text-sm">{movie.category}</span>
         </div>
-        <h2 className="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight shadow-sm">
+        <h2 className="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight drop-shadow-md">
           {movie.title}
         </h2>
-        <p className="text-lg text-zinc-300 mb-8 line-clamp-3 max-w-xl text-shadow">
+        <p className="text-lg text-zinc-300 mb-8 line-clamp-3 max-w-xl">
           {movie.description || "Một tuyệt tác đáng xem trên nền tảng của chúng tôi. Hãy tận hưởng những giây phút giải trí tuyệt vời."}
         </p>
         
