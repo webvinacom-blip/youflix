@@ -773,25 +773,25 @@ export default function App() {
     });
   }, [movies, currentCategory, searchQuery, showOnlyFull]);
 
-  const heroMovie = filteredMovies.length > 0 ? filteredMovies[0] : null;
+const heroMovie = filteredMovies.length > 0 ? filteredMovies[0] : null;
 
   return (
-<div className="min-h-screen bg-[#141414] text-white overflow-x-hidden font-sans w-full">
-    <Navbar 
-      categories={dynamicCategories}
-      currentCategory={currentCategory}
-      setCategory={setCategory}
-      searchQuery={searchQuery}
-      setSearchQuery={setSearchQuery}
-      onOpenAdd={() => setIsAddModalOpen(true)}
-      showOnlyFull={showOnlyFull}
-      setShowOnlyFull={setShowOnlyFull}
-    />
+    <div className="min-h-screen bg-[#141414] text-white overflow-x-hidden font-sans w-full max-w-full m-0 p-0">
+      <Navbar 
+        categories={dynamicCategories}
+        currentCategory={currentCategory}
+        setCategory={setCategory}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        onOpenAdd={() => setIsAddModalOpen(true)}
+        showOnlyFull={showOnlyFull}
+        setShowOnlyFull={setShowOnlyFull}
+      />
 
-  <main className="w-full pb-20">
+      <main className="w-full max-w-full pb-20 m-0 p-0">
         {!searchQuery && currentCategory === 'Tất cả' && <Hero movie={heroMovie} onPlay={setSelectedMovie} />}
         
-        <div className={`relative z-10 ${!searchQuery && currentCategory === 'Tất cả' ? '-mt-32' : 'pt-28'}`}>
+        <div className={`relative z-10 w-full ${!searchQuery && currentCategory === 'Tất cả' ? '-mt-32' : 'pt-28'}`}>
           {currentCategory === 'Tất cả' && !searchQuery ? (
             dynamicCategories.filter(c => c !== 'Tất cả').map(cat => {
               const catMovies = filteredMovies.filter(m => m.category === cat);
@@ -799,12 +799,12 @@ export default function App() {
               return <MovieRow key={cat} title={cat} movies={catMovies} onMovieClick={setSelectedMovie} onDeleteMovie={handleDeleteRequest} />
             })
           ) : (
-            <div className="px-8">
+            <div className="px-8 w-full">
               <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
                 {searchQuery ? `Kết quả tìm kiếm cho: "${searchQuery}"` : currentCategory}
                 {showOnlyFull && <span className="bg-red-600 text-white text-xs px-2 py-1 rounded uppercase tracking-wider">Đã Full</span>}
               </h2>
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap gap-4 w-full">
                 {filteredMovies.map(movie => (
                   <MovieCard key={movie.id} movie={movie} onClick={setSelectedMovie} onDelete={handleDeleteRequest} />
                 ))}
@@ -817,7 +817,7 @@ export default function App() {
         </div>
       </main>
 
-      <footer className="py-8 flex flex-col items-center text-center text-zinc-600 text-sm gap-2">
+      <footer className="w-full py-8 flex flex-col items-center text-center text-zinc-600 text-sm gap-2 bg-[#141414]">
         <p>YouFlix - Clone Project. Dữ liệu lưu trữ thông minh.</p>
         <button 
           onClick={() => {
