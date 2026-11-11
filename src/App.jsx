@@ -6,13 +6,13 @@ import { getAnalytics } from "firebase/analytics";
 
 // --- Cấu hình Firebase của riêng bạn ---
 const firebaseConfig = {
-  apiKey: "AIzaSyCFHM0yidEmIRU0DgSsYr721J1QfRFQJ0M",
+  apiKey: "AIzaSyCFHM0yidEmIRU0DgSsYr721J1QfRFQR0M",
   authDomain: "youflix-shared.firebaseapp.com",
   projectId: "youflix-shared",
-  storageBucket: "youflix-shared.appspot.com",
+  storageBucket: "youflix-shared.firebasestorage.app",
   messagingSenderId: "309437656302",
   appId: "1:309437656302:web:4365301530338d0a1c97ff",
-  measurementId: "G-QGZG1IMPZR"
+  measurementId: "G-QGZGL1MPZR"
 };
 
 // Khởi tạo Firebase trực tiếp để dùng chung cho mọi người
@@ -678,28 +678,21 @@ const [movies, setMovies] = useState(() => {
     return ['Tất cả', ...Array.from(uniqueCats)];
   }, [movies]);
 
-  useEffect(() => {
-    if (!useCloud) {
-      localStorage.setItem('youflix_movies_v2', JSON.stringify(movies));
-      return;
-    }
+useEffect(() => {
+    if (!useCloud || !auth) return;
 
     const initAuth = async () => {
       try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
+        await signInAnonymously(auth);
       } catch (error) {
-        console.error("Lỗi xác thực:", error);
+        console.error("Lỗi xác thực ẩn danh:", error);
       }
     };
     initAuth();
     
     const unsubscribe = onAuthStateChanged(auth, setUser);
     return () => unsubscribe();
-  }, [movies]);
+  }, []);
 
 
   // Đồng bộ dữ liệu vào LocalStorage khi chạy độc lập
