@@ -169,7 +169,7 @@ function Hero({ movie, onPlay }) {
           <span className="text-green-500 font-bold text-sm">98% Phù hợp</span>
           <span className="border border-zinc-500 text-zinc-300 text-xs px-2 py-0.5 rounded-sm">4K</span>
           {movie.isFull && <span className="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider">Đã Full</span>}
-          <span className="text-zinc-300 text-sm">{movie.category}</span>
+          <span className="text-left text-base font-semibold text-zinc-300">{movie.category}</span>
         </div>
         <h2 className="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight shadow-sm">
           {movie.title}
