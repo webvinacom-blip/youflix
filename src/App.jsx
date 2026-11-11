@@ -771,21 +771,21 @@ useEffect(() => {
 const handleAddMovie = async (e) => {
   e.preventDefault();
   
-  if (!newTitle.trim() || !newVideoId.trim()) {
-    alert("Vui lòng nhập tên phim và mã video YouTube!");
-    return;
-  }
-
-  const newMovie = {
-    id: Date.now().toString(),
-    title: newTitle.trim(),
-    videoId: newVideoId.trim(),
-    category: newCategory,
-    description: newDesc.trim() || 'Mô tả bộ phim.',
-    isFull: newIsFull
-  };
-
   try {
+    if (!newTitle.trim() || !newVideoId.trim()) {
+      alert("Vui lòng nhập tên phim và mã video YouTube!");
+      return;
+    }
+
+    const newMovie = {
+      id: Date.now().toString(),
+      title: newTitle.trim(),
+      videoId: newVideoId.trim(),
+      category: newCategory,
+      description: newDesc.trim() || 'Mô tả bộ phim.',
+      isFull: newIsFull
+    };
+
     // Lưu trực tiếp lên Cloud Firestore
     if (db) {
       const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', newMovie.id);
@@ -802,8 +802,8 @@ const handleAddMovie = async (e) => {
     setNewDesc('');
     setNewIsFull(false);
   } catch (error) {
-    console.error("Lỗi khi thêm phim lên Firestore:", error);
-    alert("Có lỗi xảy ra khi lưu phim lên mây!");
+    console.error("Lỗi khi thêm phim:", error);
+    alert("Có lỗi xảy ra khi thêm phim, vui lòng thử lại!");
   }
 };
 
@@ -986,10 +986,11 @@ const heroMovie = filteredMovies.length > 0 ? filteredMovies[0] : null;
           Hủy
         </button>
         <button 
-          type="submit" 
-          className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition"
+          onClick={() => setIsAddModalOpen(true)}
+          className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3.5 py-1.5 rounded-full font-medium text-xs md:text-sm transition shrink-0 shadow"
         >
-          Thêm phim
+          <Plus size={16} />
+          <span>Thêm Phim</span>
         </button>
       </div>
     </form>
