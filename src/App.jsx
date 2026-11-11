@@ -788,9 +788,11 @@ useEffect(() => {
     setMovieToDelete(id);
   };
 
+  
   const confirmDelete = async () => {
     if (movieToDelete) {
-      if (useCloud && user) {
+      // ---> SỬA LẠI ĐOẠN NÀY <---
+      if (db) {
         try {
           const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', movieToDelete);
           await deleteDoc(movieDocRef);
@@ -800,6 +802,7 @@ useEffect(() => {
       } else {
         setMovies(prev => prev.filter(m => m.id !== movieToDelete));
       }
+      // -------------------------
 
       if (selectedMovie && selectedMovie.id === movieToDelete) {
         setSelectedMovie(null);
