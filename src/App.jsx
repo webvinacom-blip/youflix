@@ -763,23 +763,40 @@ useEffect(() => {
     return () => unsubscribe();
   }, [user]);
 
-const handleAddMovie = async ( newMovie ) => {
-    // 1. Cập nhật giao diện ngay lập tức
-    const updatedMovies = [newMovie, ...movies];
-    setMovies(updatedMovies);
+const handleAddMovie = async (e) => {
+    e.preventDefault();
+    
+    // Lấy dữ liệu từ form (giả định các ô input có id hoặc state tương ứng)
+    const titleInput = document.getElementById('movieTitleInput')?.value || 'Phim mới';
+    const videoIdInput = document.getElementById('movieVideoIdInput')?.value || 'dQw4w9WgXcQ';
+    const categoryInput = document.getElementById('movieCategoryInput')?.value || 'Hành động';
+    const descInput = document.getElementById('movieDescInput')?.value || '';
+    const isFullInput = document.getElementById('movieIsFullInput')?.checked || false;
 
-    // 2. Lưu trực tiếp lên Cloud Firestore để bạn bè cùng thấy
-    if (useCloud && db) {
-      try {
+    const newMovie = {
+      id: Date.now().toString(),
+      title: titleInput,
+      videoId: videoIdInput,
+      category: categoryInput,
+      description: descInput,
+      isFull: isFullInput
+    };
+
+    try {
+      // 1. Lưu trực tiếp lên Cloud Firestore
+      if (db) {
         const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', newMovie.id);
         await setDoc(movieDocRef, newMovie);
-        console.log("Đã lưu phim lên Firebase thành công!");
-      } catch (error) {
-        console.error("Lỗi khi lưu phim lên Firebase:", error);
       }
-    } else {
-      // Fallback lưu vào LocalStorage nếu không dùng cloud
-      localStorage.setItem('youflix_movies_v2', JSON.stringify(updatedMovies));
+      
+      // 2. Cập nhật giao diện cục bộ
+      setMovies(prev => [newMovie, ...prev]);
+      
+      // 3. Đóng modal thêm phim
+      setIsAddModalOpen(false);
+    } catch (error) {
+      console.error("Lỗi khi thêm phim lên Firestore:", error);
+      alert("Có lỗi xảy ra khi lưu phim, vui lòng thử lại!");
     }
   };
 
