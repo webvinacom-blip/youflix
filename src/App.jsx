@@ -5,8 +5,8 @@ import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from 'fi
 
 // Khởi tạo an toàn để tránh sập màn hình đen
 let app, auth, db;
-let useCloud = false;
-let appId = 'youflix-shared-room-v1';
+let useCloud = true;
+let appId = 'youflix-shared-room-v2';
 
 try {
   if (typeof __firebase_config !== 'undefined' && __firebase_config) {
@@ -95,12 +95,12 @@ function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel }) {
 
 function Navbar({ categories, currentCategory, setCategory, searchQuery, setSearchQuery, onOpenAdd, showOnlyFull, setShowOnlyFull }) {
   return (
-    <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/90 to-transparent pb-4 pt-4 px-8 flex flex-col md:flex-row items-center justify-between gap-4 transition-all duration-300">
-      <div className="flex items-center gap-8 w-full md:w-auto overflow-hidden">
-        <h1 className="text-red-600 font-black text-3xl tracking-tighter cursor-pointer shrink-0" onClick={() => setCategory('Tất cả')}>
+    <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/90 via-black/70 to-transparent py-4 px-6 md:px-12 flex flex-wrap items-center justify-between gap-4 transition-all duration-300">
+      <div className="flex items-center gap-6 overflow-hidden">
+        <h1 className="text-red-600 font-black text-2xl md:text-3xl tracking-tighter cursor-pointer shrink-0" onClick={() => setCategory('Tất cả')}>
           YOUFLIX
         </h1>
-        <div className="flex gap-4 overflow-x-auto no-scrollbar whitespace-nowrap scroll-smooth">
+        <div className="hidden lg:flex gap-4 overflow-x-auto no-scrollbar whitespace-nowrap scroll-smooth">
           {categories.map(cat => (
             <button 
               key={cat}
@@ -113,34 +113,34 @@ function Navbar({ categories, currentCategory, setCategory, searchQuery, setSear
         </div>
       </div>
       
-      <div className="flex flex-wrap md:flex-nowrap items-center gap-4 w-full md:w-auto">
-        <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-zinc-300 hover:text-white transition bg-black/40 px-3 py-1.5 rounded-full border border-zinc-700">
+      <div className="flex items-center gap-3 ml-auto">
+        <label className="hidden sm:flex items-center gap-2 cursor-pointer text-xs md:text-sm font-medium text-zinc-300 hover:text-white transition bg-black/40 px-3 py-1.5 rounded-full border border-zinc-700">
           <input 
             type="checkbox" 
             checked={showOnlyFull} 
             onChange={(e) => setShowOnlyFull(e.target.checked)}
             className="w-4 h-4 accent-red-600"
           />
-          Chỉ hiện phim đã Full
+          Chỉ Full
         </label>
         
-        <div className="relative flex-1 md:w-64 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
+        <div className="relative w-40 sm:w-56">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
           <input 
             type="text" 
-            placeholder="Tìm kiếm phim..."
+            placeholder="Tìm kiếm..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-black/50 border border-zinc-700 text-white rounded-full py-1.5 pl-10 pr-4 focus:outline-none focus:border-white transition placeholder:text-zinc-500 text-sm"
+            className="w-full bg-black/50 border border-zinc-700 text-white rounded-full py-1.5 pl-9 pr-3 focus:outline-none focus:border-white transition placeholder:text-zinc-500 text-xs md:text-sm"
           />
         </div>
         
         <button 
           onClick={onOpenAdd}
-          className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded-full font-medium text-sm transition shrink-0"
+          className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3.5 py-1.5 rounded-full font-medium text-xs md:text-sm transition shrink-0"
         >
-          <Plus size={18} />
-          <span className="hidden sm:inline">Thêm Phim</span>
+          <Plus size={16} />
+          <span>Thêm Phim</span>
         </button>
       </div>
     </nav>
