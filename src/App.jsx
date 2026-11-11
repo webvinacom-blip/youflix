@@ -701,7 +701,6 @@ export default function App() {
     return () => unsubscribe();
   }, [movies]);
 
-const [user, setUser] = useState(null);
 
   // Đồng bộ dữ liệu vào LocalStorage khi chạy độc lập
   useEffect(() => {
