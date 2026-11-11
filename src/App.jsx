@@ -672,30 +672,26 @@ useEffect(() => {
   });
 
   useEffect(() => {
-    if (!db) return;
+  if (!db) return;
 
-    try {
-      const moviesCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'movies');
-      
-      const unsubscribe = onSnapshot(moviesCollectionRef, (snapshot) => {
-        const cloudMovies = [];
-        snapshot.forEach((doc) => {
-          cloudMovies.push(doc.data());
-        });
-        
-        if (cloudMovies.length > 0) {
-          cloudMovies.sort((a, b) => Number(b.id) - Number(a.id));
-          setMovies(cloudMovies);
-        }
-      }, (error) => {
-        console.error("Lỗi đọc dữ liệu từ Firestore:", error);
-      });
-
-      return () => unsubscribe();
-    } catch (err) {
-      console.error("Lỗi khởi tạo kết nối Firestore:", err);
+  const moviesCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'movies');
+  
+  const unsubscribe = onSnapshot(moviesCollectionRef, (snapshot) => {
+    const cloudMovies = [];
+    snapshot.forEach((doc) => {
+      cloudMovies.push(doc.data());
+    });
+    
+    if (cloudMovies.length > 0) {
+      cloudMovies.sort((a, b) => Number(b.id) - Number(a.id));
+      setMovies(cloudMovies); // Cập nhật danh sách từ Firebase
     }
-  }, []);
+  }, (error) => {
+    console.error("Lỗi đọc dữ liệu từ Firestore:", error);
+  });
+
+  return () => unsubscribe();
+}, [db, appId]);
   
   const [currentCategory, setCategory] = useState('Tất cả');
   const [searchQuery, setSearchQuery] = useState('');
@@ -770,9 +766,10 @@ useEffect(() => {
 
     return () => unsubscribe();
   }, [user]);
-
+  
   const handleAddMovies = async (newMovies) => {
-    if (useCloud && user) {
+    // Chỉ cần có db và useCloud là cho phép đẩy lên Firestore ngay lập tức
+    if (db) {
       newMovies.forEach(async (movie) => {
         try {
           const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', movie.id);
@@ -782,6 +779,7 @@ useEffect(() => {
         }
       });
     } else {
+      // Fallback nếu không có kết nối cloud
       setMovies(prev => [...newMovies, ...prev]);
     }
   };
