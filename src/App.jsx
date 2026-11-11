@@ -429,7 +429,12 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
       setError("Phim này (hoặc link video này) đã tồn tại trong thư viện.");
       return;
     }
-
+const handleAddMovieSubmit = async (e) => {
+  e.preventDefault();
+  if (!newTitle.trim() || !newVideoId.trim()) {
+    alert("Vui lòng nhập tên phim và mã video!");
+    return;
+  }
     const newMovie = {
       id: Date.now().toString(),
       videoId,
