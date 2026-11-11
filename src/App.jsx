@@ -649,37 +649,62 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies, db, a
 // --- Main App ---
 
 export default function App() {
-  useEffect(() => {
-    if (!document.getElementById('tailwind-cdn')) {
-      const script = document.createElement('script');
-      script.id = 'tailwind-cdn';
-      script.src = 'https://cdn.tailwindcss.com';
-      document.head.appendChild(script);
-    }
-  }, []);
-
-const [movies, setMovies] = useState(() => {
+  const [movies, setMovies] = useState(() => {
     const saved = localStorage.getItem('youflix_movies_v2');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) { /* ignore */ }
     }
     return initialMovies;
   });
-  
+
   const [currentCategory, setCategory] = useState('Tất cả');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [movieToDelete, setMovieToDelete] = useState(null);
-  const [showOnlyFull, setShowOnlyFull] = useState(false);
-
   const [user, setUser] = useState(null);
 
-  const dynamicCategories = useMemo(() => {
-    const uniqueCats = new Set(movies.map(m => m.category));
-    return ['Tất cả', ...Array.from(uniqueCats)];
-  }, [movies]);
+  // Khai báo state trực tiếp trong App để không bao giờ bị lỗi undefined
+  const [newTitle, setNewTitle] = useState('');
+  const [newVideoId, setNewVideoId] = useState('');
+  const [newCategory, setNewCategory] = useState('Hành động');
+  const [newDesc, setNewDesc] = useState('');
+  const [newIsFull, setNewIsFull] = useState(false);
 
+  // Hàm xử lý thêm phim nằm trực tiếp trong App
+  const handleAddMovieSubmit = async (e) => {
+    e.preventDefault();
+    if (!newTitle.trim() || !newVideoId.trim()) {
+      alert("Vui lòng nhập tên phim và mã video!");
+      return;
+    }
+
+    const newMovie = {
+      id: Date.now().toString(),
+      title: newTitle.trim(),
+      videoId: newVideoId.trim(),
+      category: newCategory,
+      description: newDesc.trim() || 'Mô tả bộ phim.',
+      isFull: newIsFull
+    };
+
+    try {
+      if (useCloud && db) {
+        const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', newMovie.id);
+        await setDoc(movieDocRef, newMovie);
+      }
+      setMovies(prev => [newMovie, ...prev]);
+      setIsAddModalOpen(false);
+      
+      // Reset form
+      setNewTitle('');
+      setNewVideoId('');
+      setNewDesc('');
+      setNewIsFull(false);
+    } catch (error) {
+      console.error("Lỗi khi lưu phim:", error);
+      alert("Có lỗi xảy ra khi lưu phim!");
+    }
+  };
 useEffect(() => {
     if (!useCloud || !db) return;
 
@@ -912,86 +937,89 @@ const heroMovie = filteredMovies.length > 0 ? filteredMovies[0] : null;
       )}
       
 {isAddModalOpen && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-    <form onSubmit={handleAddMovie} className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 w-full max-w-md shadow-2xl space-y-4">
-      <h3 className="text-xl font-bold text-white mb-2">Thêm phim mới</h3>
-      
-      <div>
-        <label className="block text-xs font-medium text-zinc-400 mb-1">Tên phim</label>
-        <input 
-          type="text" 
-          value={newTitle} 
-          onChange={(e) => setNewTitle(e.target.value)}
-          placeholder="Nhập tên phim..."
-          required
-          className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
-        />
-      </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <form onSubmit={handleAddMovieSubmit} className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 w-full max-w-md shadow-2xl space-y-4">
+            <h3 className="text-xl font-bold text-white mb-2">Thêm phim mới</h3>
+            
+            <div>
+              <label className="block text-xs font-medium text-zinc-400 mb-1">Tên phim</label>
+              <input 
+                type="text" 
+                value={newTitle} 
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder="Nhập tên phim..."
+                required
+                className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
+              />
+            </div>
 
-      <div>
-        <label className="block text-xs font-medium text-zinc-400 mb-1">Mã Video YouTube (videoId)</label>
-        <input 
-          type="text" 
-          value={newVideoId} 
-          onChange={(e) => setNewVideoId(e.target.value)}
-          placeholder="Ví dụ: dQw4w9WgXcQ"
-          required
-          className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
-        />
-      </div>
+            <div>
+              <label className="block text-xs font-medium text-zinc-400 mb-1">Mã Video YouTube (videoId)</label>
+              <input 
+                type="text" 
+                value={newVideoId} 
+                onChange={(e) => setNewVideoId(e.target.value)}
+                placeholder="Ví dụ: dQw4w9WgXcQ"
+                required
+                className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
+              />
+            </div>
 
-      <div>
-        <label className="block text-xs font-medium text-zinc-400 mb-1">Thể loại</label>
-        <select 
-          value={newCategory} 
-          onChange={(e) => setNewCategory(e.target.value)}
-          className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
-        >
-          {categories.filter(c => c !== 'Tất cả').map(cat => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
-        </select>
-      </div>
+            <div>
+              <label className="block text-xs font-medium text-zinc-400 mb-1">Thể loại</label>
+              <select 
+                value={newCategory} 
+                onChange={(e) => setNewCategory(e.target.value)}
+                className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
+              >
+                {categories.filter(c => c !== 'Tất cả').map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
 
-      <div>
-        <label className="block text-xs font-medium text-zinc-400 mb-1">Mô tả ngắn</label>
-        <textarea 
-          value={newDesc} 
-          onChange={(e) => setNewDesc(e.target.value)}
-          placeholder="Nhập mô tả..."
-          className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600 resize-none h-20"
-        />
-      </div>
+            <div>
+              <label className="block text-xs font-medium text-zinc-400 mb-1">Mô tả ngắn</label>
+              <textarea 
+                value={newDesc} 
+                onChange={(e) => setNewDesc(e.target.value)}
+                placeholder="Nhập mô tả..."
+                className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600 resize-none h-20"
+              />
+            </div>
 
-      <div className="flex items-center gap-2">
-        <input 
-          type="checkbox" 
-          id="isFullCheckbox"
-          checked={newIsFull} 
-          onChange={(e) => setNewIsFull(e.target.checked)}
-          className="w-4 h-4 accent-red-600"
-        />
-        <label htmlFor="isFullCheckbox" className="text-sm text-zinc-300 cursor-pointer">Đã Full bộ / Trọn bộ</label>
-      </div>
+            <div className="flex items-center gap-2">
+              <input 
+                type="checkbox" 
+                id="isFullCheckbox"
+                checked={newIsFull} 
+                onChange={(e) => setNewIsFull(e.target.checked)}
+                className="w-4 h-4 accent-red-600"
+              />
+              <label htmlFor="isFullCheckbox" className="text-sm text-zinc-300 cursor-pointer">Đã Full bộ / Trọn bộ</label>
+            </div>
 
-      <div className="flex justify-end gap-3 pt-2">
-        <button 
-          type="button" 
-          onClick={() => setIsAddModalOpen(false)}
-          className="px-4 py-2 rounded bg-zinc-800 hover:bg-zinc-700 text-white text-sm transition"
-        >
-          Hủy
-        </button>
-        <button 
-          type="submit" 
-          className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition"
-        >
-          Thêm phim
-        </button>
-      </div>
-    </form>
-  </div>
-)}
+            <div className="flex justify-end gap-3 pt-2">
+              <button 
+                type="button" 
+                onClick={() => setIsAddModalOpen(false)}
+                className="px-4 py-2 rounded bg-zinc-800 hover:bg-zinc-700 text-white text-sm transition"
+              >
+                Hủy
+              </button>
+              <button 
+                type="submit" 
+                className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition"
+              >
+                Thêm phim
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+}
 
       <ConfirmDialog 
         isOpen={!!movieToDelete}
