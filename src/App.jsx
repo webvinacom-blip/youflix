@@ -150,43 +150,43 @@ function Hero({ movie, onPlay }) {
   if (!movie) return null;
   
   return (
-    <div className="relative w-full aspect-[16/9] max-h-[80vh] min-h-[400px] mb-8 overflow-hidden">
+    <div className="relative w-full aspect-[4/5] sm:aspect-[16/9] max-h-[70vh] mb-8 overflow-hidden">
       <div className="absolute inset-0 w-full h-full">
         <img 
           src={getHighResThumbnail(movie.videoId)} 
           alt={movie.title}
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent"></div>
       </div>
       
-      <div className="absolute bottom-[10%] left-8 md:left-16 max-w-2xl z-20">
-        <div className="flex items-center gap-3 mb-3">
-          <span className="text-green-500 font-bold text-sm">98% Phù hợp</span>
-          <span className="border border-zinc-500 text-zinc-300 text-xs px-2 py-0.5 rounded-sm">4K</span>
-          {movie.isFull && <span className="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider">Đã Full</span>}
-          <span className="text-zinc-300 text-sm">{movie.category}</span>
+      <div className="absolute bottom-6 left-4 right-4 md:left-16 max-w-2xl z-20">
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
+          <span className="text-green-500 font-bold text-xs">98% Phù hợp</span>
+          <span className="border border-zinc-500 text-zinc-300 text-[10px] px-1.5 py-0.5 rounded-sm">4K</span>
+          {movie.isFull && <span className="bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm uppercase">Đã Full</span>}
+          <span className="text-zinc-300 text-xs">{movie.category}</span>
         </div>
-        <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-3 leading-tight drop-shadow-md">
+        <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white mb-2 leading-tight">
           {movie.title}
         </h2>
-        <p className="text-sm md:text-base text-zinc-300 mb-6 line-clamp-2 max-w-xl">
-          {movie.description || "Một tuyệt tác đáng xem trên nền tảng của chúng tôi. Hãy tận hưởng những giây phút giải trí tuyệt vời."}
+        <p className="text-xs sm:text-sm text-zinc-300 mb-4 line-clamp-2 max-w-xl">
+          {movie.description || "Một tuyệt tác đáng xem trên nền tảng của chúng tôi."}
         </p>
         
-        <div className="flex gap-4">
+        <div className="flex gap-3">
           <button 
             onClick={() => onPlay(movie)}
-            className="flex items-center gap-2 bg-white text-black px-6 py-2 rounded hover:bg-white/80 transition font-bold text-base"
+            className="flex items-center gap-2 bg-white text-black px-5 py-2 rounded hover:bg-white/80 transition font-bold text-sm"
           >
-            <Play size={20} fill="currentColor" /> Phát ngay
+            <Play size={18} fill="currentColor" /> Phát ngay
           </button>
           <button 
             onClick={() => onPlay(movie)}
-            className="flex items-center gap-2 bg-zinc-500/50 text-white px-6 py-2 rounded hover:bg-zinc-500/70 transition font-bold text-base backdrop-blur-sm"
+            className="flex items-center gap-2 bg-zinc-500/50 text-white px-5 py-2 rounded hover:bg-zinc-500/70 transition font-bold text-sm backdrop-blur-sm"
           >
-            <Info size={20} /> Chi tiết
+            <Info size={18} /> Chi tiết
           </button>
         </div>
       </div>
@@ -790,10 +790,10 @@ const heroMovie = filteredMovies.length > 0 ? filteredMovies[0] : null;
         setShowOnlyFull={setShowOnlyFull}
       />
 
-    <main className="w-full min-h-screen bg-[#141414] pb-20 overflow-x-hidden">
-     {!searchQuery && currentCategory === 'Tất cả' && <Hero movie={heroMovie} onPlay={setSelectedMovie} />}
+<main className="w-full min-h-screen bg-[#141414] pb-20 overflow-x-hidden pt-44 md:pt-28">
+    {!searchQuery && currentCategory === 'Tất cả' && <Hero movie={heroMovie} onPlay={setSelectedMovie} />}
     
-      <div className={`w-full relative z-10 ${!searchQuery && currentCategory === 'Tất cả' ? '-mt-24 md:-mt-32' : 'pt-28'}`}>
+<div className={`w-full relative z-10 ${!searchQuery && currentCategory === 'Tất cả' ? 'mt-4 md:-mt-32' : 'pt-4'}`}>
       {currentCategory === 'Tất cả' && !searchQuery ? (
         dynamicCategories.filter(c => c !== 'Tất cả').map(cat => {
           const catMovies = filteredMovies.filter(m => m.category === cat);
