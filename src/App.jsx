@@ -788,34 +788,34 @@ const heroMovie = filteredMovies.length > 0 ? filteredMovies[0] : null;
         setShowOnlyFull={setShowOnlyFull}
       />
 
-      <main className="w-full max-w-full pb-20 m-0 p-0">
-        {!searchQuery && currentCategory === 'Tất cả' && <Hero movie={heroMovie} onPlay={setSelectedMovie} />}
-        
-        <div className={`relative z-10 w-full ${!searchQuery && currentCategory === 'Tất cả' ? '-mt-32' : 'pt-28'}`}>
-          {currentCategory === 'Tất cả' && !searchQuery ? (
-            dynamicCategories.filter(c => c !== 'Tất cả').map(cat => {
-              const catMovies = filteredMovies.filter(m => m.category === cat);
-              if (catMovies.length === 0) return null;
-              return <MovieRow key={cat} title={cat} movies={catMovies} onMovieClick={setSelectedMovie} onDeleteMovie={handleDeleteRequest} />
-            })
-          ) : (
-            <div className="px-8 w-full">
-              <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                {searchQuery ? `Kết quả tìm kiếm cho: "${searchQuery}"` : currentCategory}
-                {showOnlyFull && <span className="bg-red-600 text-white text-xs px-2 py-1 rounded uppercase tracking-wider">Đã Full</span>}
-              </h2>
-              <div className="flex flex-wrap gap-4 w-full">
-                {filteredMovies.map(movie => (
-                  <MovieCard key={movie.id} movie={movie} onClick={setSelectedMovie} onDelete={handleDeleteRequest} />
-                ))}
-                {filteredMovies.length === 0 && (
-                  <p className="text-zinc-500 w-full py-20 text-center">Không tìm thấy nội dung phù hợp với bộ lọc hiện tại.</p>
-                )}
-              </div>
-            </div>
-          )}
+    <main className="w-full min-h-screen bg-[#141414] pb-20 overflow-x-hidden">
+     {!searchQuery && currentCategory === 'Tất cả' && <Hero movie={heroMovie} onPlay={setSelectedMovie} />}
+    
+      <div className={`w-full relative z-10 ${!searchQuery && currentCategory === 'Tất cả' ? '-mt-24 md:-mt-32' : 'pt-28'}`}>
+      {currentCategory === 'Tất cả' && !searchQuery ? (
+        dynamicCategories.filter(c => c !== 'Tất cả').map(cat => {
+          const catMovies = filteredMovies.filter(m => m.category === cat);
+          if (catMovies.length === 0) return null;
+          return <MovieRow key={cat} title={cat} movies={catMovies} onMovieClick={setSelectedMovie} onDeleteMovie={handleDeleteRequest} />
+        })
+      ) : (
+        <div className="w-full px-8 md:px-16">
+          <h2 className="text-2xl font-bold mb-6 flex items-center gap-3 text-white">
+            {searchQuery ? `Kết quả tìm kiếm cho: "${searchQuery}"` : currentCategory}
+            {showOnlyFull && <span className="bg-red-600 text-white text-xs px-2 py-1 rounded uppercase tracking-wider">Đã Full</span>}
+          </h2>
+          <div className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {filteredMovies.map(movie => (
+              <MovieCard key={movie.id} movie={movie} onClick={setSelectedMovie} onDelete={handleDeleteRequest} />
+            ))}
+            {filteredMovies.length === 0 && (
+              <p className="text-zinc-500 w-full col-span-full py-20 text-center">Không tìm thấy nội dung phù hợp với bộ lọc hiện tại.</p>
+            )}
+          </div>
         </div>
-      </main>
+      )}
+    </div>
+     </main>
 
       <footer className="w-full py-8 flex flex-col items-center text-center text-zinc-600 text-sm gap-2 bg-[#141414]">
         <p>YouFlix - Clone Project. Dữ liệu lưu trữ thông minh.</p>
