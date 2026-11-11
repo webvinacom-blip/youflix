@@ -644,13 +644,20 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
 // --- Main App ---
 
 export default function App() {
-  useEffect(() => {
-    if (!document.getElementById('tailwind-cdn')) {
-      const script = document.createElement('script');
-      script.id = 'tailwind-cdn';
-      script.src = 'https://cdn.tailwindcss.com';
-      document.head.appendChild(script);
-    }
+useEffect(() => {
+    if (!useCloud || !auth) return;
+
+    const initAuth = async () => {
+      try {
+        await signInAnonymously(auth);
+      } catch (error) {
+        console.error("Lỗi xác thực ẩn danh:", error);
+      }
+    };
+    initAuth();
+    
+    const unsubscribe = onAuthStateChanged(auth, setUser);
+    return () => unsubscribe();
   }, []);
 
   const [movies, setMovies] = useState(() => {
