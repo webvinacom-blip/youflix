@@ -763,18 +763,23 @@ useEffect(() => {
     return () => unsubscribe();
   }, [user]);
 
-  const handleAddMovies = async (newMovies) => {
-    if (useCloud && user) {
-      newMovies.forEach(async (movie) => {
-        try {
-          const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', movie.id);
-          await setDoc(movieDocRef, movie);
-        } catch (e) {
-          console.error("Lỗi khi thêm phim:", e);
-        }
-      });
+const handleAddMovie = async ( newMovie ) => {
+    // 1. Cập nhật giao diện ngay lập tức
+    const updatedMovies = [newMovie, ...movies];
+    setMovies(updatedMovies);
+
+    // 2. Lưu trực tiếp lên Cloud Firestore để bạn bè cùng thấy
+    if (useCloud && db) {
+      try {
+        const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', newMovie.id);
+        await setDoc(movieDocRef, newMovie);
+        console.log("Đã lưu phim lên Firebase thành công!");
+      } catch (error) {
+        console.error("Lỗi khi lưu phim lên Firebase:", error);
+      }
     } else {
-      setMovies(prev => [...newMovies, ...prev]);
+      // Fallback lưu vào LocalStorage nếu không dùng cloud
+      localStorage.setItem('youflix_movies_v2', JSON.stringify(updatedMovies));
     }
   };
 
