@@ -776,19 +776,19 @@ export default function App() {
   const heroMovie = filteredMovies.length > 0 ? filteredMovies[0] : null;
 
   return (
-    <div className="min-h-screen bg-[#141414] text-white overflow-x-hidden font-sans">
-      <Navbar 
-        categories={dynamicCategories}
-        currentCategory={currentCategory} 
-        setCategory={setCategory} 
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        onOpenAdd={() => setIsAddModalOpen(true)}
-        showOnlyFull={showOnlyFull}
-        setShowOnlyFull={setShowOnlyFull}
-      />
+<div className="min-h-screen bg-[#141414] text-white overflow-x-hidden font-sans w-full">
+  <Navbar 
+    categories={dynamicCategories}
+    currentCategory={currentCategory}
+    setCategory={setCategory}
+    searchQuery={searchQuery}
+    setSearchQuery={setSearchQuery}
+    onOpenAdd={() => setIsAddModalOpen(true)}
+    showOnlyFull={showOnlyFull}
+    setShowOnlyFull={setShowOnlyFull}
+  />
 
-      <main className="pb-20">
+  <main className="w-full pb-20">
         {!searchQuery && currentCategory === 'Tất cả' && <Hero movie={heroMovie} onPlay={setSelectedMovie} />}
         
         <div className={`relative z-10 ${!searchQuery && currentCategory === 'Tất cả' ? '-mt-32' : 'pt-28'}`}>
