@@ -679,18 +679,31 @@ const [movies, setMovies] = useState(() => {
   }, [movies]);
 
 useEffect(() => {
-    if (!useCloud || !auth) return;
+    if (!useCloud || !db) return;
 
-    const initAuth = async () => {
-      try {
-        await signInAnonymously(auth);
-      } catch (error) {
-        console.error("Lỗi xác thực ẩn danh:", error);
-      }
-    };
-    initAuth();
+    // Đường dẫn collection trên Firestore
+    const moviesRef = collection(db, 'artifacts', appId, 'public', 'data', 'movies');
     
-    const unsubscribe = onAuthStateChanged(auth, setUser);
+    const unsubscribe = onSnapshot(moviesRef, (snapshot) => {
+      if (!snapshot.empty) {
+        const loadedMovies = [];
+        snapshot.forEach((doc) => {
+          loadedMovies.push(doc.data());
+        });
+        // Sắp xếp phim mới thêm lên đầu
+        loadedMovies.sort((a, b) => b.id.localeCompare(a.id));
+        setMovies(loadedMovies);
+      } else {
+        // Nếu database hoàn toàn trống, tự động đẩy danh sách phim hiện tại lên mây để mọi người cùng thấy
+        initialMovies.forEach(async (movie) => {
+          const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', movie.id);
+          await setDoc(movieDocRef, movie);
+        });
+      }
+    }, (error) => {
+      console.error("Lỗi tải dữ liệu phim từ Cloud:", error);
+    });
+
     return () => unsubscribe();
   }, []);
 
