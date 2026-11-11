@@ -665,6 +665,7 @@ export default function App() {
   const [showOnlyFull, setShowOnlyFull] = useState(false);
   const [dynamicCategories, setDynamicCategories] = useState([]);
   const [movieToDelete, setMovieToDelete] = useState(null);
+  const categories = ['Tất cả', 'Hành động', 'Hoạt hình', 'Viễn tưởng', 'Tình cảm', 'Kinh dị', 'Tru Tiên'];
 
   // Khai báo state trực tiếp trong App để không bao giờ bị lỗi undefined
   const [newTitle, setNewTitle] = useState('');
