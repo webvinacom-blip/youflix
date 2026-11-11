@@ -370,285 +370,277 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete }) {
   );
 }
 
-function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
+function AddMovieModal({ categories, onClose, onAddMovies, existingMovies, db, appId, useCloud }) {
+  // Trạng thái chuyển đổi giữa 'single' (thêm 1 phim) và 'channel' (nhập nguyên kênh)
   const [activeTab, setActiveTab] = useState('single');
-  const [url, setUrl] = useState('');
-  const [title, setTitle] = useState('');
-  const [category, setCategory] = useState(categories.length > 1 ? categories[1] : 'Hành động');
-  const [description, setDescription] = useState('');
-  const [isFull, setIsFull] = useState(false);
-  
-  const [channelId, setChannelId] = useState('');
-  const [apiKey, setApiKey] = useState('');
-  const [maxVideos, setMaxVideos] = useState(50);
-  
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+
+  // State cho Thêm 1 phim lẻ
   const [newTitle, setNewTitle] = useState('');
   const [newVideoId, setNewVideoId] = useState('');
-  const [newCategory, setNewCategory] = useState('Hành động');
+  const [newCategory, setNewCategory] = useState(categories.length > 1 ? categories[1] : 'Hành động');
   const [newDesc, setNewDesc] = useState('');
   const [newIsFull, setNewIsFull] = useState(false);
 
-  const fetchVideoInfo = async (videoId) => {
-    try {
-      const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
-      const data = await res.json();
-      if (data.title && !title) {
-        setTitle(data.title);
-        if (detectIsFull(data.title)) {
-          setIsFull(true);
-        }
-      }
-    } catch (e) {
-      console.warn("Could not fetch title automatically");
-    }
-  };
+  // State cho Nhập nguyên kênh
+  const [channelId, setChannelId] = useState('');
+  const [apiKey, setApiKey] = useState('');
+  const [maxVideos, setMaxVideos] = useState(50);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleUrlChange = (e) => {
-    const val = e.target.value;
-    setUrl(val);
-    const id = extractYoutubeId(val);
-    if (id) {
-      fetchVideoInfo(id);
-    }
-  };
-
-  const handleSubmitSingle = (e) => {
+  // Xử lý thêm 1 phim lẻ
+  const handleAddSingleMovie = async (e) => {
     e.preventDefault();
-    setError('');
-    
-    const videoId = extractYoutubeId(url);
-    if (!videoId) {
-      setError("Link YouTube không hợp lệ.");
+    if (!newTitle.trim() || !newVideoId.trim()) {
+      alert("Vui lòng nhập tên phim và mã video!");
       return;
     }
 
-    const isDuplicate = existingMovies.some(m => m.videoId === videoId || m.title.toLowerCase().trim() === title.toLowerCase().trim());
-    if (isDuplicate) {
-      setError("Phim này (hoặc link video này) đã tồn tại trong thư viện.");
-      return;
-    }
-const handleAddMovieSubmit = async (e) => {
-  e.preventDefault();
-  if (!newTitle.trim() || !newVideoId.trim()) {
-    alert("Vui lòng nhập tên phim và mã video!");
-    return;
-  }
     const newMovie = {
       id: Date.now().toString(),
-      videoId,
-      title: title || "Video không có tiêu đề",
-      category,
-      description,
-      isFull
+      title: newTitle.trim(),
+      videoId: newVideoId.trim(),
+      category: newCategory,
+      description: newDesc.trim() || 'Mô tả bộ phim.',
+      isFull: newIsFull
     };
-    
-    onAddMovies([newMovie]);
-    onClose();
+
+    try {
+      if (useCloud && db) {
+        const { doc, setDoc } = await import('firebase/firestore');
+        const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', newMovie.id);
+        await setDoc(movieDocRef, newMovie);
+      }
+      onAddMovies(newMovie);
+      onClose();
+    } catch (err) {
+      console.error("Lỗi lưu phim lên mây:", err);
+      alert("Có lỗi xảy ra khi lưu phim!");
+    }
   };
 
-  const handleSubmitChannel = async (e) => {
+  // Xử lý nhập nguyên kênh YouTube qua API
+  const handleImportChannel = async (e) => {
     e.preventDefault();
-    setError('');
-    
-    if (!channelId || !apiKey) {
-      setError("Vui lòng nhập Channel ID và API Key.");
+    if (!channelId.trim() || !apiKey.trim()) {
+      setError('Vui lòng nhập Channel ID và YouTube API Key!');
       return;
     }
 
     setLoading(true);
+    setError('');
+
     try {
-      let allVideos = [];
-      let nextPageToken = '';
-      let fetchedCount = 0;
-      const limit = Math.min(Math.max(parseInt(maxVideos) || 50, 1), 500);
+      const response = await fetch(
+        `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${channelId.trim()}&part=snippet,id&order=date&maxResults=${maxVideos}`
+      );
+      const data = await response.json();
 
-      while (fetchedCount < limit) {
-        const fetchCount = Math.min(50, limit - fetchedCount);
-        let fetchUrl = `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${channelId}&part=snippet,id&order=date&maxResults=${fetchCount}&type=video`;
-        
-        if (nextPageToken) {
-          fetchUrl += `&pageToken=${nextPageToken}`;
+      if (data.error) {
+        throw new Error(data.error.message);
+      }
+
+      const items = data.items || [];
+      const importedMovies = items
+        .filter(item => item.id.kind === 'youtube#video')
+        .map((item, index) => ({
+          id: `ch_${item.id.videoId}_${Date.now()}_${index}`,
+          title: item.snippet.title,
+          videoId: item.id.videoId,
+          category: categories.length > 1 ? categories[1] : 'Hành động',
+          description: item.snippet.description || 'Video nhập từ kênh YouTube.',
+          isFull: false
+        }));
+
+      if (importedMovies.length === 0) {
+        setError('Không tìm thấy video nào trong kênh này!');
+        setLoading(false);
+        return;
+      }
+
+      // Lưu từng video lên Firebase Firestore
+      if (useCloud && db) {
+        const { doc, setDoc } = await import('firebase/firestore');
+        for (const movie of importedMovies) {
+          const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', movie.id);
+          await setDoc(movieDocRef, movie);
         }
-
-        const res = await fetch(fetchUrl);
-        const data = await res.json();
-
-        if (data.error) throw new Error(data.error.message);
-        if (!data.items || data.items.length === 0) break;
-
-        const newMovies = data.items
-          .filter(item => item.id.videoId)
-          .filter(item => {
-             const isDupDb = existingMovies.some(m => m.videoId === item.id.videoId || m.title.toLowerCase().trim() === item.snippet.title.toLowerCase().trim());
-             const isDupLocal = allVideos.some(m => m.videoId === item.id.videoId || m.title.toLowerCase().trim() === item.snippet.title.toLowerCase().trim());
-             return !isDupDb && !isDupLocal;
-          })
-          .map(item => {
-             const isVideoFull = detectIsFull(item.snippet.title, item.snippet.description);
-             return {
-              id: item.id.videoId + '_' + Date.now() + Math.random(),
-              videoId: item.id.videoId,
-              title: item.snippet.title,
-              description: item.snippet.description,
-              category: category,
-              isFull: isVideoFull
-             };
-          });
-
-        allVideos = [...allVideos, ...newMovies];
-        fetchedCount += data.items.length;
-        nextPageToken = data.nextPageToken;
-
-        if (!nextPageToken) break;
       }
 
-      if (allVideos.length === 0) {
-        throw new Error("Không tìm thấy video nào.");
-      }
-
-      onAddMovies(allVideos);
+      // Cập nhật giao diện
+      importedMovies.forEach(m => onAddMovies(m));
+      setLoading(false);
       onClose();
     } catch (err) {
-      setError("Lỗi khi tải kênh: " + err.message);
-    } finally {
+      console.error("Lỗi nhập kênh:", err);
+      setError(`Lỗi: ${err.message}`);
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-zinc-900 w-full max-w-md rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10 flex flex-col max-h-[90vh]">
-        <div className="flex justify-between items-center p-5 border-b border-zinc-800 shrink-0">
-          <h2 className="text-xl font-bold text-white">Thêm Nội Dung</h2>
-          <button onClick={onClose} className="text-zinc-400 hover:text-white transition"><X size={24}/></button>
-        </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 w-full max-w-md shadow-2xl space-y-4">
         
-        <div className="flex border-b border-zinc-800 shrink-0">
-          <button
-            className={`flex-1 py-3 text-sm font-semibold transition ${activeTab === 'single' ? 'text-white border-b-2 border-red-600 bg-zinc-800/50' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/30'}`}
-            onClick={() => { setActiveTab('single'); setError(''); }}
+        {/* Tab chuyển đổi giữa Thêm lẻ và Nhập kênh */}
+        <div className="flex border-b border-zinc-800 pb-2 mb-2">
+          <button 
+            type="button"
+            onClick={() => setActiveTab('single')}
+            className={`flex-1 pb-2 text-sm font-semibold transition ${activeTab === 'single' ? 'text-red-500 border-b-2 border-red-500' : 'text-zinc-400 hover:text-white'}`}
           >
-            Một Video
+            Thêm 1 Phim
           </button>
-          <button
-            className={`flex-1 py-3 text-sm font-semibold transition ${activeTab === 'channel' ? 'text-white border-b-2 border-red-600 bg-zinc-800/50' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/30'}`}
-            onClick={() => { setActiveTab('channel'); setError(''); }}
+          <button 
+            type="button"
+            onClick={() => setActiveTab('channel')}
+            className={`flex-1 pb-2 text-sm font-semibold transition ${activeTab === 'channel' ? 'text-red-500 border-b-2 border-red-500' : 'text-zinc-400 hover:text-white'}`}
           >
-            Cả Kênh
+            Nhập Nguyên Kênh
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
-          {error && <div className="mb-4 p-3 bg-red-500/20 border border-red-500 text-red-500 rounded text-sm">{error}</div>}
-          
-          {activeTab === 'single' ? (
-            <form onSubmit={handleSubmitSingle} className="flex flex-col gap-4">
-              <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-1">Link YouTube</label>
-                <input 
-                  type="text" value={url} onChange={handleUrlChange} required
-                  placeholder="https://www.youtube.com/watch?v=..."
-                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-3 py-2 focus:border-red-600 outline-none transition"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-1">Tiêu đề (Tự động tải)</label>
-                <input 
-                  type="text" value={title} onChange={(e) => setTitle(e.target.value)} required
-                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-3 py-2 focus:border-red-600 outline-none transition"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-1">Thể loại</label>
-                <input 
-                  type="text" 
-                  list="category-options"
-                  value={category} 
-                  onChange={(e) => setCategory(e.target.value)}
-                  placeholder="Nhập hoặc chọn thể loại..."
-                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-3 py-2 focus:border-red-600 outline-none transition"
-                  required
-                />
-                <datalist id="category-options">
-                  {categories.filter(c => c !== 'Tất cả').map(cat => (
-                    <option key={cat} value={cat} />
-                  ))}
-                </datalist>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-1">Mô tả (Tùy chọn)</label>
-                <textarea 
-                  value={description} onChange={(e) => setDescription(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-3 py-2 focus:border-red-600 outline-none transition h-20 resize-none"
-                />
-              </div>
-              <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  checked={isFull} 
-                  onChange={(e) => setIsFull(e.target.checked)}
-                  className="w-4 h-4 accent-red-600"
-                />
-                Đánh dấu phim này là Trọn bộ (Đã Full)
-              </label>
-              <button type="submit" className="mt-2 w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded font-bold transition">
-                Thêm Video
+        {/* NỘI DUNG TAB 1: THÊM 1 PHIM LẺ */}
+        {activeTab === 'single' && (
+          <form onSubmit={handleAddSingleMovie} className="space-y-4">
+            <h3 className="text-lg font-bold text-white">Thêm phim mới</h3>
+            <div>
+              <label className="block text-xs font-medium text-zinc-400 mb-1">Tên phim</label>
+              <input 
+                type="text" 
+                value={newTitle} 
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder="Nhập tên phim..."
+                required
+                className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-zinc-400 mb-1">Mã Video YouTube (videoId)</label>
+              <input 
+                type="text" 
+                value={newVideoId} 
+                onChange={(e) => setNewVideoId(e.target.value)}
+                placeholder="Ví dụ: dQw4w9WgXcQ"
+                required
+                className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-zinc-400 mb-1">Thể loại</label>
+              <select 
+                value={newCategory} 
+                onChange={(e) => setNewCategory(e.target.value)}
+                className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
+              >
+                {categories.filter(c => c !== 'Tất cả').map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-zinc-400 mb-1">Mô tả ngắn</label>
+              <textarea 
+                value={newDesc} 
+                onChange={(e) => setNewDesc(e.target.value)}
+                placeholder="Nhập mô tả..."
+                className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600 resize-none h-16"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input 
+                type="checkbox" 
+                id="isFullCheckbox"
+                checked={newIsFull} 
+                onChange={(e) => setNewIsFull(e.target.checked)}
+                className="w-4 h-4 accent-red-600"
+              />
+              <label htmlFor="isFullCheckbox" className="text-sm text-zinc-300 cursor-pointer">Đã Full bộ / Trọn bộ</label>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button 
+                type="button" 
+                onClick={onClose}
+                className="px-4 py-2 rounded bg-zinc-800 hover:bg-zinc-700 text-white text-sm transition"
+              >
+                Hủy
               </button>
-            </form>
-          ) : (
-             <form onSubmit={handleSubmitChannel} className="flex flex-col gap-4">
-              <div className="text-xs text-blue-400 bg-blue-400/10 p-3 rounded border border-blue-400/20">
-                Tính năng này tự động phân tích tiêu đề để gắn nhãn "Đã Full" khi tải video về.
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-1">Channel ID</label>
-                <input 
-                  type="text" value={channelId} onChange={(e) => setChannelId(e.target.value)} required
-                  placeholder="VD: UC_x5XG1OV2P6uZZ5FSM9Ttw"
-                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-3 py-2 focus:border-red-600 outline-none transition"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-1">YouTube API Key</label>
-                <input 
-                  type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} required
-                  placeholder="AIzaSy..."
-                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-3 py-2 focus:border-red-600 outline-none transition"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-1">Số lượng video (Tối đa 500)</label>
-                <input 
-                  type="number" value={maxVideos} onChange={(e) => setMaxVideos(e.target.value)} required
-                  min="1" max="500"
-                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-3 py-2 focus:border-red-600 outline-none transition"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-1">Xếp vào Thể loại</label>
-                <input 
-                  type="text" 
-                  list="category-options-channel"
-                  value={category} 
-                  onChange={(e) => setCategory(e.target.value)}
-                  placeholder="Nhập hoặc chọn thể loại..."
-                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-3 py-2 focus:border-red-600 outline-none transition"
-                  required
-                />
-                <datalist id="category-options-channel">
-                  {categories.filter(c => c !== 'Tất cả').map(cat => (
-                    <option key={cat} value={cat} />
-                  ))}
-                </datalist>
-              </div>
-              <button type="submit" disabled={loading} className="mt-2 w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded font-bold transition disabled:opacity-50">
-                {loading ? 'Đang tải...' : 'Nhập Kênh'}
+              <button 
+                type="submit" 
+                className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition"
+              >
+                Thêm phim
               </button>
-            </form>
-          )}
-        </div>
+            </div>
+          </form>
+        )}
+
+        {/* NỘI DUNG TAB 2: NHẬP NGUYÊN KÊNH YOUTUBE */}
+        {activeTab === 'channel' && (
+          <form onSubmit={handleImportChannel} className="space-y-4">
+            <h3 className="text-lg font-bold text-white">Nhập nguyên kênh YouTube</h3>
+            {error && <div className="text-red-500 text-xs bg-red-950/50 p-2 rounded border border-red-900">{error}</div>}
+            
+            <div>
+              <label className="block text-xs font-medium text-zinc-400 mb-1">YouTube API Key</label>
+              <input 
+                type="text" 
+                value={apiKey} 
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="Nhập khóa API YouTube của bạn..."
+                required
+                className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-zinc-400 mb-1">Channel ID (ID Kênh)</label>
+              <input 
+                type="text" 
+                value={channelId} 
+                onChange={(e) => setChannelId(e.target.value)}
+                placeholder="Ví dụ: UC_x5XG1OV2P6uZZ5FSM9Ttw"
+                required
+                className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-zinc-400 mb-1">Số lượng video tối đa muốn lấy</label>
+              <input 
+                type="number" 
+                value={maxVideos} 
+                onChange={(e) => setMaxVideos(Number(e.target.value))}
+                min="1" 
+                max="50"
+                className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button 
+                type="button" 
+                onClick={onClose}
+                className="px-4 py-2 rounded bg-zinc-800 hover:bg-zinc-700 text-white text-sm transition"
+              >
+                Hủy
+              </button>
+              <button 
+                type="submit" 
+                disabled={loading}
+                className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition disabled:opacity-50"
+              >
+                {loading ? 'Đang nhập...' : 'Nhập nguyên kênh'}
+              </button>
+            </div>
+          </form>
+        )}
+
       </div>
     </div>
   );
