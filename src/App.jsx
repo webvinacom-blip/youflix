@@ -150,7 +150,7 @@ function Hero({ movie, onPlay }) {
   if (!movie) return null;
   
   return (
-    <div className="relative w-full h-[70vh] min-h-[500px] mb-8 overflow-hidden">
+    <div className="relative w-full aspect-[16/9] max-h-[80vh] min-h-[400px] mb-8 overflow-hidden">
       <div className="absolute inset-0 w-full h-full">
         <img 
           src={getHighResThumbnail(movie.videoId)} 
@@ -161,32 +161,32 @@ function Hero({ movie, onPlay }) {
         <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent"></div>
       </div>
       
-      <div className="absolute bottom-[15%] left-8 md:left-16 max-w-2xl z-20">
-        <div className="flex items-center gap-3 mb-4">
+      <div className="absolute bottom-[10%] left-8 md:left-16 max-w-2xl z-20">
+        <div className="flex items-center gap-3 mb-3">
           <span className="text-green-500 font-bold text-sm">98% Phù hợp</span>
           <span className="border border-zinc-500 text-zinc-300 text-xs px-2 py-0.5 rounded-sm">4K</span>
           {movie.isFull && <span className="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider">Đã Full</span>}
           <span className="text-zinc-300 text-sm">{movie.category}</span>
         </div>
-        <h2 className="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight drop-shadow-md">
+        <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-3 leading-tight drop-shadow-md">
           {movie.title}
         </h2>
-        <p className="text-lg text-zinc-300 mb-8 line-clamp-3 max-w-xl">
+        <p className="text-sm md:text-base text-zinc-300 mb-6 line-clamp-2 max-w-xl">
           {movie.description || "Một tuyệt tác đáng xem trên nền tảng của chúng tôi. Hãy tận hưởng những giây phút giải trí tuyệt vời."}
         </p>
         
         <div className="flex gap-4">
           <button 
             onClick={() => onPlay(movie)}
-            className="flex items-center gap-2 bg-white text-black px-8 py-2.5 rounded hover:bg-white/80 transition font-bold text-lg"
+            className="flex items-center gap-2 bg-white text-black px-6 py-2 rounded hover:bg-white/80 transition font-bold text-base"
           >
-            <Play size={24} fill="currentColor" /> Phát ngay
+            <Play size={20} fill="currentColor" /> Phát ngay
           </button>
           <button 
             onClick={() => onPlay(movie)}
-            className="flex items-center gap-2 bg-zinc-500/50 text-white px-8 py-2.5 rounded hover:bg-zinc-500/70 transition font-bold text-lg backdrop-blur-sm"
+            className="flex items-center gap-2 bg-zinc-500/50 text-white px-6 py-2 rounded hover:bg-zinc-500/70 transition font-bold text-base backdrop-blur-sm"
           >
-            <Info size={24} /> Chi tiết
+            <Info size={20} /> Chi tiết
           </button>
         </div>
       </div>
