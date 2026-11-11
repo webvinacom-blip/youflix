@@ -3,7 +3,6 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from 'firebase/firestore';
 import { getAnalytics } from "firebase/analytics";
-import { db, appId } from './firebase'; // Hoặc đường dẫn file cấu hình firebase của bạn
 
 // --- Cấu hình Firebase của riêng bạn ---
 const firebaseConfig = {
