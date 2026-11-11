@@ -1,27 +1,28 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from 'firebase/firestore';
+import { getAnalytics } from "firebase/analytics";
 
-// --- Khởi tạo an toàn tuyệt đối tránh màn hình đen ---
-let app = null;
-let auth = null;
-let db = null;
-let useCloud = false;
-let appId = 'youflix-shared-room-v2';
+// --- Cấu hình Firebase của riêng bạn ---
+const firebaseConfig = {
+  apiKey: "AIzaSyCFHM0yidEmIRU0DgSsYr721J1QfRFQJ0M",
+  authDomain: "youflix-shared.firebaseapp.com",
+  projectId: "youflix-shared",
+  storageBucket: "youflix-shared.appspot.com",
+  messagingSenderId: "309437656302",
+  appId: "1:309437656302:web:4365301530338d0a1c97ff",
+  measurementId: "G-QGZG1IMPZR"
+};
 
-try {
-  if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-    const firebaseConfig = JSON.parse(__firebase_config);
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    db = getFirestore(app);
-    appId = typeof __app_id !== 'undefined' ? __app_id : 'youflix-shared-room-v2';
-    useCloud = true;
-  }
-} catch (e) {
-  console.warn("Running in stable LocalStorage mode");
-}
+// Khởi tạo Firebase trực tiếp để dùng chung cho mọi người
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const auth = getAuth(app);
+const db = getFirestore(app);
+let appId = 'youflix-shared-room-v3';
+let useCloud = true;
+
 
 // --- Icons ---
 const Search = ({ size = 24, className = "" }) => (
