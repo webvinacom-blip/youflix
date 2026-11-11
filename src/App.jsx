@@ -3,9 +3,9 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from 'firebase/firestore';
 
-// Firebase Setup với cơ chế kiểm tra an toàn nếu chạy ngoài môi trường Canvas
-let app, auth, db, appId = 'default-app-id';
-let useCloud = false;
+// Ép buộc bật Cloud Firestore nếu đã cấu hình Firebase
+let useCloud = true; // Chuyển thành true để đồng bộ chung dữ liệu
+let app, auth, db, appId = 'youflix-shared-room-v1'; // Đặt tên phòng chung cố định cho mọi người dùng
 
 try {
   if (typeof __firebase_config !== 'undefined') {
@@ -13,11 +13,13 @@ try {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
-    appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-    useCloud = true;
+    appId = typeof __app_id !== 'undefined' ? __app_id : 'youflix-shared-room-v1';
+  } else {
+    // Nếu deploy trên Vercel bình thường, bạn có thể thay cấu hình Firebase của bạn vào đây nếu muốn dùng chung database
+    // Hoặc ứng dụng sẽ dùng chung một nhánh công khai
   }
 } catch (e) {
-  console.warn("Running in standalone mode (LocalStorage fallback active)");
+  console.warn("Using fallback mode");
 }
 
 // --- Icons ---
@@ -700,13 +702,14 @@ export default function App() {
     return () => unsubscribe();
   }, [movies]);
 
-  useEffect(() => {
-    if (!useCloud || !user) return;
+useEffect(() => {
+    if (!user) return;
 
     const moviesRef = collection(db, 'artifacts', appId, 'public', 'data', 'movies');
     
     const unsubscribe = onSnapshot(moviesRef, (snapshot) => {
       if (snapshot.empty) {
+        // Nếu database trống, tự động thêm phim mẫu khởi tạo
         initialMovies.forEach(async (movie) => {
           const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', movie.id);
           await setDoc(movieDocRef, movie);
