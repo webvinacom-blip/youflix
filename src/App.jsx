@@ -97,7 +97,7 @@ function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel }) {
 
 function Navbar({ categories, currentCategory, setCategory, searchQuery, setSearchQuery, onOpenAdd, showOnlyFull, setShowOnlyFull }) {
   return (
-    <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/90 via-black/70 to-transparent py-4 px-6 md:px-12 flex flex-wrap items-center justify-between gap-4 transition-all duration-300">
+    <nav className="fixed top-0 w-full z-50 bg-[#141414]/95 backdrop-blur-md py-3 px-4 md:px-12 flex items-center justify-between gap-4 border-b border-zinc-800/80 shadow-lg">
       <div className="flex items-center gap-6 overflow-hidden">
         <h1 className="text-red-600 font-black text-2xl md:text-3xl tracking-tighter cursor-pointer shrink-0" onClick={() => setCategory('Tất cả')}>
           YOUFLIX
@@ -107,7 +107,7 @@ function Navbar({ categories, currentCategory, setCategory, searchQuery, setSear
             <button 
               key={cat}
               onClick={() => setCategory(cat)}
-              className={`text-sm font-medium transition shrink-0 ${currentCategory === cat ? 'text-white' : 'text-zinc-300 hover:text-white'}`}
+              className={`text-sm font-medium transition shrink-0 ${currentCategory === cat ? 'text-white' : 'text-zinc-400 hover:text-white'}`}
             >
               {cat}
             </button>
@@ -116,7 +116,7 @@ function Navbar({ categories, currentCategory, setCategory, searchQuery, setSear
       </div>
       
       <div className="flex items-center gap-3 ml-auto">
-        <label className="hidden sm:flex items-center gap-2 cursor-pointer text-xs md:text-sm font-medium text-zinc-300 hover:text-white transition bg-black/40 px-3 py-1.5 rounded-full border border-zinc-700">
+        <label className="hidden sm:flex items-center gap-2 cursor-pointer text-xs font-medium text-zinc-300 hover:text-white transition bg-zinc-900 px-3 py-1.5 rounded-full border border-zinc-700">
           <input 
             type="checkbox" 
             checked={showOnlyFull} 
@@ -126,20 +126,20 @@ function Navbar({ categories, currentCategory, setCategory, searchQuery, setSear
           Chỉ Full
         </label>
         
-        <div className="relative w-40 sm:w-56">
+        <div className="relative w-36 sm:w-52">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
           <input 
             type="text" 
             placeholder="Tìm kiếm..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-black/50 border border-zinc-700 text-white rounded-full py-1.5 pl-9 pr-3 focus:outline-none focus:border-white transition placeholder:text-zinc-500 text-xs md:text-sm"
+            className="w-full bg-zinc-900 border border-zinc-700 text-white rounded-full py-1.5 pl-9 pr-3 focus:outline-none focus:border-white transition placeholder:text-zinc-500 text-xs md:text-sm"
           />
         </div>
         
         <button 
           onClick={onOpenAdd}
-          className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3.5 py-1.5 rounded-full font-medium text-xs md:text-sm transition shrink-0"
+          className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3.5 py-1.5 rounded-full font-medium text-xs md:text-sm transition shrink-0 shadow"
         >
           <Plus size={16} />
           <span>Thêm Phim</span>
@@ -153,43 +153,43 @@ function Hero({ movie, onPlay }) {
   if (!movie) return null;
   
   return (
-    <div className="relative w-full aspect-[4/5] sm:aspect-[16/9] max-h-[70vh] mb-8 overflow-hidden">
+    <div className="relative w-full h-[65vh] md:h-[75vh] min-h-[450px] mb-8 overflow-hidden pt-16">
       <div className="absolute inset-0 w-full h-full">
         <img 
           src={getHighResThumbnail(movie.videoId)} 
           alt={movie.title}
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent"></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/50 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-black/30"></div>
       </div>
       
-      <div className="absolute bottom-6 left-4 right-4 md:left-16 max-w-2xl z-20">
-        <div className="flex items-center gap-2 mb-2 flex-wrap">
-          <span className="text-green-500 font-bold text-xs">98% Phù hợp</span>
-          <span className="border border-zinc-500 text-zinc-300 text-[10px] px-1.5 py-0.5 rounded-sm">4K</span>
-          {movie.isFull && <span className="bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm uppercase">Đã Full</span>}
-          <span className="text-zinc-300 text-xs">{movie.category}</span>
+      <div className="absolute bottom-10 left-4 md:left-12 right-4 max-w-2xl z-20">
+        <div className="flex items-center gap-3 mb-3 flex-wrap">
+          <span className="text-green-500 font-bold text-sm">98% Phù hợp</span>
+          <span className="border border-zinc-500 text-zinc-300 text-xs px-2 py-0.5 rounded-sm">4K</span>
+          {movie.isFull && <span className="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-sm uppercase">Đã Full</span>}
+          <span className="text-zinc-300 text-sm">{movie.category}</span>
         </div>
-        <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white mb-2 leading-tight">
+        <h2 className="text-3xl md:text-5xl font-bold text-white mb-3 leading-tight drop-shadow-md">
           {movie.title}
         </h2>
-        <p className="text-xs sm:text-sm text-zinc-300 mb-4 line-clamp-2 max-w-xl">
+        <p className="text-sm md:text-base text-zinc-300 mb-6 line-clamp-2 max-w-xl">
           {movie.description || "Một tuyệt tác đáng xem trên nền tảng của chúng tôi."}
         </p>
         
-        <div className="flex gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button 
             onClick={() => onPlay(movie)}
-            className="flex items-center gap-2 bg-white text-black px-5 py-2 rounded hover:bg-white/80 transition font-bold text-sm"
+            className="flex items-center gap-2 bg-white text-black px-6 py-2.5 rounded hover:bg-white/80 transition font-bold text-sm md:text-base shadow-lg"
           >
-            <Play size={18} fill="currentColor" /> Phát ngay
+            <Play size={20} fill="currentColor" /> Phát ngay
           </button>
           <button 
             onClick={() => onPlay(movie)}
-            className="flex items-center gap-2 bg-zinc-500/50 text-white px-5 py-2 rounded hover:bg-zinc-500/70 transition font-bold text-sm backdrop-blur-sm"
+            className="flex items-center gap-2 bg-zinc-500/60 text-white px-6 py-2.5 rounded hover:bg-zinc-500/80 transition font-bold text-sm md:text-base backdrop-blur-sm shadow-lg"
           >
-            <Info size={18} /> Chi tiết
+            <Info size={20} /> Chi tiết
           </button>
         </div>
       </div>
