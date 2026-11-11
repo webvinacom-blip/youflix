@@ -662,6 +662,7 @@ export default function App() {
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [showOnlyFull, setShowOnlyFull] = useState(false);
 
   // Khai báo state trực tiếp trong App để không bao giờ bị lỗi undefined
   const [newTitle, setNewTitle] = useState('');
