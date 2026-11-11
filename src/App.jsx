@@ -1017,9 +1017,6 @@ const heroMovie = filteredMovies.length > 0 ? filteredMovies[0] : null;
           </form>
         </div>
       )}
-    </div>
-  );
-}
 
       <ConfirmDialog 
         isOpen={!!movieToDelete}
