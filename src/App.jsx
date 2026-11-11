@@ -919,59 +919,9 @@ const heroMovie = filteredMovies.length > 0 ? filteredMovies[0] : null;
     <form onSubmit={handleAddMovie} className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 w-full max-w-md shadow-2xl">
       <h3 className="text-xl font-bold text-white mb-4">Thêm phim mới</h3>
       
+      {/* Các ô input nhập liệu ở đây */}
       <div className="space-y-4">
-        <div>
-          <label className="block text-xs font-medium text-zinc-400 mb-1">Tên phim</label>
-<input 
-  type="text" 
-  value={newTitle} 
-  onChange={(e) => setNewTitle(e.target.value)}
-  placeholder="Nhập tên phim..."
-  required
-  className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
-/>
-
-        <div>
-          <label className="block text-xs font-medium text-zinc-400 mb-1">Mã Video YouTube (videoId)</label>
-<input 
-  type="text" 
-  value={newVideoId} 
-  onChange={(e) => setNewVideoId(e.target.value)}
-  placeholder="Ví dụ: dQw4w9WgXcQ"
-  required
-  className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
-/>
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium text-zinc-400 mb-1">Thể loại</label>
-          <select 
-            id="movieCategoryInput"
-            className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
-          >
-            {categories.filter(c => c !== 'Tất cả').map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium text-zinc-400 mb-1">Mô tả ngắn</label>
-          <textarea 
-            id="movieDescInput"
-            placeholder="Nhập mô tả..."
-            className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600 resize-none h-20"
-          />
-        </div>
-
-        <div className="flex items-center gap-2">
-          <input 
-            type="checkbox" 
-            id="movieIsFullInput"
-            className="w-4 h-4 accent-red-600"
-          />
-          <label htmlFor="movieIsFullInput" className="text-sm text-zinc-300 cursor-pointer">Đã Full bộ / Trọn bộ</label>
-        </div>
+        {/* ... */}
       </div>
 
       <div className="flex justify-end gap-3 mt-6">
@@ -983,14 +933,13 @@ const heroMovie = filteredMovies.length > 0 ? filteredMovies[0] : null;
           Hủy
         </button>
         <button 
-          onClick={() => setIsAddModalOpen(true)}
-          className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3.5 py-1.5 rounded-full font-medium text-xs md:text-sm transition shrink-0 shadow"
+          type="submit" 
+          className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition"
         >
-          <Plus size={16} />
-          <span>Thêm Phim</span>
+          Thêm phim
         </button>
       </div>
-    </form>
+    </form> {/* <--- Đảm bảo có thẻ đóng </form> ở đây */}
   </div>
 )}
 
