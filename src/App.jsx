@@ -1,28 +1,24 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from 'firebase/firestore';
-import { getAnalytics } from "firebase/analytics";
 
-// --- Cấu hình Firebase của riêng bạn ---
-const firebaseConfig = {
-  apiKey: "AIzaSyCFHM0yidEmIRU0DgSsYr721J1QfRFQR0M",
-  authDomain: "youflix-shared.firebaseapp.com",
-  projectId: "youflix-shared",
-  storageBucket: "youflix-shared.firebasestorage.app",
-  messagingSenderId: "309437656302",
-  appId: "1:309437656302:web:4365301530338d0a1c97ff",
-  measurementId: "G-QGZGL1MPZR"
-};
+// Firebase Setup với cơ chế kiểm tra an toàn nếu chạy ngoài môi trường Canvas
+let app, auth, db, appId = 'default-app-id';
+let useCloud = false;
 
-// Khởi tạo Firebase trực tiếp để dùng chung cho mọi người
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-const auth = getAuth(app);
-const db = getFirestore(app);
-let appId = 'youflix-shared-room-v3';
-let useCloud = true;
-
+try {
+  if (typeof __firebase_config !== 'undefined') {
+    const firebaseConfig = JSON.parse(__firebase_config);
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+    appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    useCloud = true;
+  }
+} catch (e) {
+  console.warn("Running in standalone mode (LocalStorage fallback active)");
+}
 
 // --- Icons ---
 const Search = ({ size = 24, className = "" }) => (
@@ -98,17 +94,17 @@ function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel }) {
 
 function Navbar({ categories, currentCategory, setCategory, searchQuery, setSearchQuery, onOpenAdd, showOnlyFull, setShowOnlyFull }) {
   return (
-    <nav className="fixed top-0 w-full z-50 bg-[#141414]/95 backdrop-blur-md py-3 px-4 md:px-12 flex items-center justify-between gap-4 border-b border-zinc-800/80 shadow-lg">
-      <div className="flex items-center gap-6 overflow-hidden">
-        <h1 className="text-red-600 font-black text-2xl md:text-3xl tracking-tighter cursor-pointer shrink-0" onClick={() => setCategory('Tất cả')}>
+    <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/90 to-transparent pb-4 pt-4 px-8 flex flex-col md:flex-row items-center justify-between gap-4 transition-all duration-300">
+      <div className="flex items-center gap-8 w-full md:w-auto overflow-hidden">
+        <h1 className="text-red-600 font-black text-3xl tracking-tighter cursor-pointer shrink-0" onClick={() => setCategory('Tất cả')}>
           YOUFLIX
         </h1>
-        <div className="hidden lg:flex gap-4 overflow-x-auto no-scrollbar whitespace-nowrap scroll-smooth">
+        <div className="flex gap-4 overflow-x-auto no-scrollbar whitespace-nowrap scroll-smooth">
           {categories.map(cat => (
             <button 
               key={cat}
               onClick={() => setCategory(cat)}
-              className={`text-sm font-medium transition shrink-0 ${currentCategory === cat ? 'text-white' : 'text-zinc-400 hover:text-white'}`}
+              className={`text-sm font-medium transition shrink-0 ${currentCategory === cat ? 'text-white' : 'text-zinc-300 hover:text-white'}`}
             >
               {cat}
             </button>
@@ -116,34 +112,34 @@ function Navbar({ categories, currentCategory, setCategory, searchQuery, setSear
         </div>
       </div>
       
-      <div className="flex items-center gap-3 ml-auto">
-        <label className="hidden sm:flex items-center gap-2 cursor-pointer text-xs font-medium text-zinc-300 hover:text-white transition bg-zinc-900 px-3 py-1.5 rounded-full border border-zinc-700">
+      <div className="flex flex-wrap md:flex-nowrap items-center gap-4 w-full md:w-auto">
+        <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-zinc-300 hover:text-white transition bg-black/40 px-3 py-1.5 rounded-full border border-zinc-700">
           <input 
             type="checkbox" 
             checked={showOnlyFull} 
             onChange={(e) => setShowOnlyFull(e.target.checked)}
             className="w-4 h-4 accent-red-600"
           />
-          Chỉ Full
+          Chỉ hiện phim đã Full
         </label>
         
-        <div className="relative w-36 sm:w-52">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
+        <div className="relative flex-1 md:w-64 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
           <input 
             type="text" 
-            placeholder="Tìm kiếm..."
+            placeholder="Tìm kiếm phim..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-zinc-900 border border-zinc-700 text-white rounded-full py-1.5 pl-9 pr-3 focus:outline-none focus:border-white transition placeholder:text-zinc-500 text-xs md:text-sm"
+            className="w-full bg-black/50 border border-zinc-700 text-white rounded-full py-1.5 pl-10 pr-4 focus:outline-none focus:border-white transition placeholder:text-zinc-500 text-sm"
           />
         </div>
         
         <button 
           onClick={onOpenAdd}
-          className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3.5 py-1.5 rounded-full font-medium text-xs md:text-sm transition shrink-0 shadow"
+          className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded-full font-medium text-sm transition shrink-0"
         >
-          <Plus size={16} />
-          <span>Thêm Phim</span>
+          <Plus size={18} />
+          <span className="hidden sm:inline">Thêm Phim</span>
         </button>
       </div>
     </nav>
@@ -154,43 +150,43 @@ function Hero({ movie, onPlay }) {
   if (!movie) return null;
   
   return (
-    <div className="relative w-full h-[65vh] md:h-[75vh] min-h-[450px] mb-8 overflow-hidden pt-16">
+    <div className="relative w-full h-[70vh] min-h-[500px] mb-8">
       <div className="absolute inset-0 w-full h-full">
         <img 
           src={getHighResThumbnail(movie.videoId)} 
           alt={movie.title}
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/50 to-transparent"></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-black/30"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent"></div>
       </div>
       
-      <div className="absolute bottom-10 left-4 md:left-12 right-4 max-w-2xl z-20">
-        <div className="flex items-center gap-3 mb-3 flex-wrap">
+      <div className="absolute bottom-[15%] left-8 md:left-16 max-w-2xl">
+        <div className="flex items-center gap-3 mb-4">
           <span className="text-green-500 font-bold text-sm">98% Phù hợp</span>
           <span className="border border-zinc-500 text-zinc-300 text-xs px-2 py-0.5 rounded-sm">4K</span>
-          {movie.isFull && <span className="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-sm uppercase">Đã Full</span>}
+          {movie.isFull && <span className="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider">Đã Full</span>}
           <span className="text-zinc-300 text-sm">{movie.category}</span>
         </div>
-        <h2 className="text-3xl md:text-5xl font-bold text-white mb-3 leading-tight drop-shadow-md">
+        <h2 className="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight shadow-sm">
           {movie.title}
         </h2>
-        <p className="text-sm md:text-base text-zinc-300 mb-6 line-clamp-2 max-w-xl">
-          {movie.description || "Một tuyệt tác đáng xem trên nền tảng của chúng tôi."}
+        <p className="text-lg text-zinc-300 mb-8 line-clamp-3 max-w-xl text-shadow">
+          {movie.description || "Một tuyệt tác đáng xem trên nền tảng của chúng tôi. Hãy tận hưởng những giây phút giải trí tuyệt vời."}
         </p>
         
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex gap-4">
           <button 
             onClick={() => onPlay(movie)}
-            className="flex items-center gap-2 bg-white text-black px-6 py-2.5 rounded hover:bg-white/80 transition font-bold text-sm md:text-base shadow-lg"
+            className="flex items-center gap-2 bg-white text-black px-8 py-2.5 rounded hover:bg-white/80 transition font-bold text-lg"
           >
-            <Play size={20} fill="currentColor" /> Phát ngay
+            <Play size={24} fill="currentColor" /> Phát ngay
           </button>
           <button 
             onClick={() => onPlay(movie)}
-            className="flex items-center gap-2 bg-zinc-500/60 text-white px-6 py-2.5 rounded hover:bg-zinc-500/80 transition font-bold text-sm md:text-base backdrop-blur-sm shadow-lg"
+            className="flex items-center gap-2 bg-zinc-500/50 text-white px-8 py-2.5 rounded hover:bg-zinc-500/70 transition font-bold text-lg backdrop-blur-sm"
           >
-            <Info size={20} /> Chi tiết
+            <Info size={24} /> Chi tiết
           </button>
         </div>
       </div>
@@ -239,17 +235,15 @@ function MovieRow({ title, movies, onMovieClick, onDeleteMovie }) {
   if (movies.length === 0) return null;
   
   return (
-    <div className="mb-8 w-full">
-      <h2 className="text-xl font-bold text-white mb-4 px-4 md:px-8">{title}</h2>
-      {/* Trên điện thoại hiển thị cuộn ngang mượt mà, trên máy tính hiển thị tối ưu */}
+    <div className="mb-8 relative">
+      <h2 className="text-xl font-bold text-white mb-4 px-8">{title}</h2>
+      {/* Khung hiển thị phim dạng cuộn dọc, flex-wrap, giới hạn chiều cao 2 dòng */}
       <div 
-        className="flex gap-4 pb-4 px-4 md:px-8 overflow-x-auto scroll-smooth w-full no-scrollbar"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        className="flex flex-wrap gap-4 pb-4 px-8 max-h-[350px] overflow-y-auto scroll-smooth"
+        style={{ scrollbarWidth: 'thin' }}
       >
         {movies.map(movie => (
-          <div key={movie.id} className="shrink-0 w-[220px] sm:w-64">
-            <MovieCard movie={movie} onClick={onMovieClick} onDelete={onDeleteMovie} />
-          </div>
+          <MovieCard key={movie.id} movie={movie} onClick={onMovieClick} onDelete={onDeleteMovie} />
         ))}
       </div>
     </div>
@@ -370,277 +364,275 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete }) {
   );
 }
 
-function AddMovieModal({ categories, onClose, onAddMovies, existingMovies, db, appId, useCloud }) {
-  // Trạng thái chuyển đổi giữa 'single' (thêm 1 phim) và 'channel' (nhập nguyên kênh)
+function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
   const [activeTab, setActiveTab] = useState('single');
-
-  // State cho Thêm 1 phim lẻ
-  const [newTitle, setNewTitle] = useState('');
-  const [newVideoId, setNewVideoId] = useState('');
-  const [newCategory, setNewCategory] = useState(categories.length > 1 ? categories[1] : 'Hành động');
-  const [newDesc, setNewDesc] = useState('');
-  const [newIsFull, setNewIsFull] = useState(false);
-
-  // State cho Nhập nguyên kênh
+  const [url, setUrl] = useState('');
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState(categories.length > 1 ? categories[1] : 'Hành động');
+  const [description, setDescription] = useState('');
+  const [isFull, setIsFull] = useState(false);
+  
   const [channelId, setChannelId] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [maxVideos, setMaxVideos] = useState(50);
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Xử lý thêm 1 phim lẻ
-  const handleAddSingleMovie = async (e) => {
+  const fetchVideoInfo = async (videoId) => {
+    try {
+      const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
+      const data = await res.json();
+      if (data.title && !title) {
+        setTitle(data.title);
+        if (detectIsFull(data.title)) {
+          setIsFull(true);
+        }
+      }
+    } catch (e) {
+      console.warn("Could not fetch title automatically");
+    }
+  };
+
+  const handleUrlChange = (e) => {
+    const val = e.target.value;
+    setUrl(val);
+    const id = extractYoutubeId(val);
+    if (id) {
+      fetchVideoInfo(id);
+    }
+  };
+
+  const handleSubmitSingle = (e) => {
     e.preventDefault();
-    if (!newTitle.trim() || !newVideoId.trim()) {
-      alert("Vui lòng nhập tên phim và mã video!");
+    setError('');
+    
+    const videoId = extractYoutubeId(url);
+    if (!videoId) {
+      setError("Link YouTube không hợp lệ.");
+      return;
+    }
+
+    const isDuplicate = existingMovies.some(m => m.videoId === videoId || m.title.toLowerCase().trim() === title.toLowerCase().trim());
+    if (isDuplicate) {
+      setError("Phim này (hoặc link video này) đã tồn tại trong thư viện.");
       return;
     }
 
     const newMovie = {
       id: Date.now().toString(),
-      title: newTitle.trim(),
-      videoId: newVideoId.trim(),
-      category: newCategory,
-      description: newDesc.trim() || 'Mô tả bộ phim.',
-      isFull: newIsFull
+      videoId,
+      title: title || "Video không có tiêu đề",
+      category,
+      description,
+      isFull
     };
-
-    try {
-      if (useCloud && db) {
-        const { doc, setDoc } = await import('firebase/firestore');
-        const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', newMovie.id);
-        await setDoc(movieDocRef, newMovie);
-      }
-      onAddMovies(newMovie);
-      onClose();
-    } catch (err) {
-      console.error("Lỗi lưu phim lên mây:", err);
-      alert("Có lỗi xảy ra khi lưu phim!");
-    }
+    
+    onAddMovies([newMovie]);
+    onClose();
   };
 
-  // Xử lý nhập nguyên kênh YouTube qua API
-  const handleImportChannel = async (e) => {
+  const handleSubmitChannel = async (e) => {
     e.preventDefault();
-    if (!channelId.trim() || !apiKey.trim()) {
-      setError('Vui lòng nhập Channel ID và YouTube API Key!');
+    setError('');
+    
+    if (!channelId || !apiKey) {
+      setError("Vui lòng nhập Channel ID và API Key.");
       return;
     }
 
     setLoading(true);
-    setError('');
-
     try {
-      const response = await fetch(
-        `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${channelId.trim()}&part=snippet,id&order=date&maxResults=${maxVideos}`
-      );
-      const data = await response.json();
+      let allVideos = [];
+      let nextPageToken = '';
+      let fetchedCount = 0;
+      const limit = Math.min(Math.max(parseInt(maxVideos) || 50, 1), 500);
 
-      if (data.error) {
-        throw new Error(data.error.message);
-      }
-
-      const items = data.items || [];
-      const importedMovies = items
-        .filter(item => item.id.kind === 'youtube#video')
-        .map((item, index) => ({
-          id: `ch_${item.id.videoId}_${Date.now()}_${index}`,
-          title: item.snippet.title,
-          videoId: item.id.videoId,
-          category: categories.length > 1 ? categories[1] : 'Hành động',
-          description: item.snippet.description || 'Video nhập từ kênh YouTube.',
-          isFull: false
-        }));
-
-      if (importedMovies.length === 0) {
-        setError('Không tìm thấy video nào trong kênh này!');
-        setLoading(false);
-        return;
-      }
-
-      // Lưu từng video lên Firebase Firestore
-      if (useCloud && db) {
-        const { doc, setDoc } = await import('firebase/firestore');
-        for (const movie of importedMovies) {
-          const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', movie.id);
-          await setDoc(movieDocRef, movie);
+      while (fetchedCount < limit) {
+        const fetchCount = Math.min(50, limit - fetchedCount);
+        let fetchUrl = `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${channelId}&part=snippet,id&order=date&maxResults=${fetchCount}&type=video`;
+        
+        if (nextPageToken) {
+          fetchUrl += `&pageToken=${nextPageToken}`;
         }
+
+        const res = await fetch(fetchUrl);
+        const data = await res.json();
+
+        if (data.error) throw new Error(data.error.message);
+        if (!data.items || data.items.length === 0) break;
+
+        const newMovies = data.items
+          .filter(item => item.id.videoId)
+          .filter(item => {
+             const isDupDb = existingMovies.some(m => m.videoId === item.id.videoId || m.title.toLowerCase().trim() === item.snippet.title.toLowerCase().trim());
+             const isDupLocal = allVideos.some(m => m.videoId === item.id.videoId || m.title.toLowerCase().trim() === item.snippet.title.toLowerCase().trim());
+             return !isDupDb && !isDupLocal;
+          })
+          .map(item => {
+             const isVideoFull = detectIsFull(item.snippet.title, item.snippet.description);
+             return {
+              id: item.id.videoId + '_' + Date.now() + Math.random(),
+              videoId: item.id.videoId,
+              title: item.snippet.title,
+              description: item.snippet.description,
+              category: category,
+              isFull: isVideoFull
+             };
+          });
+
+        allVideos = [...allVideos, ...newMovies];
+        fetchedCount += data.items.length;
+        nextPageToken = data.nextPageToken;
+
+        if (!nextPageToken) break;
       }
 
-      // Cập nhật giao diện
-      importedMovies.forEach(m => onAddMovies(m));
-      setLoading(false);
+      if (allVideos.length === 0) {
+        throw new Error("Không tìm thấy video nào.");
+      }
+
+      onAddMovies(allVideos);
       onClose();
     } catch (err) {
-      console.error("Lỗi nhập kênh:", err);
-      setError(`Lỗi: ${err.message}`);
+      setError("Lỗi khi tải kênh: " + err.message);
+    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 w-full max-w-md shadow-2xl space-y-4">
+    <div className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-zinc-900 w-full max-w-md rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10 flex flex-col max-h-[90vh]">
+        <div className="flex justify-between items-center p-5 border-b border-zinc-800 shrink-0">
+          <h2 className="text-xl font-bold text-white">Thêm Nội Dung</h2>
+          <button onClick={onClose} className="text-zinc-400 hover:text-white transition"><X size={24}/></button>
+        </div>
         
-        {/* Tab chuyển đổi giữa Thêm lẻ và Nhập kênh */}
-        <div className="flex border-b border-zinc-800 pb-2 mb-2">
-          <button 
-            type="button"
-            onClick={() => setActiveTab('single')}
-            className={`flex-1 pb-2 text-sm font-semibold transition ${activeTab === 'single' ? 'text-red-500 border-b-2 border-red-500' : 'text-zinc-400 hover:text-white'}`}
+        <div className="flex border-b border-zinc-800 shrink-0">
+          <button
+            className={`flex-1 py-3 text-sm font-semibold transition ${activeTab === 'single' ? 'text-white border-b-2 border-red-600 bg-zinc-800/50' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/30'}`}
+            onClick={() => { setActiveTab('single'); setError(''); }}
           >
-            Thêm 1 Phim
+            Một Video
           </button>
-          <button 
-            type="button"
-            onClick={() => setActiveTab('channel')}
-            className={`flex-1 pb-2 text-sm font-semibold transition ${activeTab === 'channel' ? 'text-red-500 border-b-2 border-red-500' : 'text-zinc-400 hover:text-white'}`}
+          <button
+            className={`flex-1 py-3 text-sm font-semibold transition ${activeTab === 'channel' ? 'text-white border-b-2 border-red-600 bg-zinc-800/50' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/30'}`}
+            onClick={() => { setActiveTab('channel'); setError(''); }}
           >
-            Nhập Nguyên Kênh
+            Cả Kênh
           </button>
         </div>
 
-        {/* NỘI DUNG TAB 1: THÊM 1 PHIM LẺ */}
-        {activeTab === 'single' && (
-          <form onSubmit={handleAddSingleMovie} className="space-y-4">
-            <h3 className="text-lg font-bold text-white">Thêm phim mới</h3>
-            <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1">Tên phim</label>
-              <input 
-                type="text" 
-                value={newTitle} 
-                onChange={(e) => setNewTitle(e.target.value)}
-                placeholder="Nhập tên phim..."
-                required
-                className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1">Mã Video YouTube (videoId)</label>
-              <input 
-                type="text" 
-                value={newVideoId} 
-                onChange={(e) => setNewVideoId(e.target.value)}
-                placeholder="Ví dụ: dQw4w9WgXcQ"
-                required
-                className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1">Thể loại</label>
-              <select 
-                value={newCategory} 
-                onChange={(e) => setNewCategory(e.target.value)}
-                className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
-              >
-                {categories.filter(c => c !== 'Tất cả').map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1">Mô tả ngắn</label>
-              <textarea 
-                value={newDesc} 
-                onChange={(e) => setNewDesc(e.target.value)}
-                placeholder="Nhập mô tả..."
-                className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600 resize-none h-16"
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <input 
-                type="checkbox" 
-                id="isFullCheckbox"
-                checked={newIsFull} 
-                onChange={(e) => setNewIsFull(e.target.checked)}
-                className="w-4 h-4 accent-red-600"
-              />
-              <label htmlFor="isFullCheckbox" className="text-sm text-zinc-300 cursor-pointer">Đã Full bộ / Trọn bộ</label>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-2">
-              <button 
-                type="button" 
-                onClick={onClose}
-                className="px-4 py-2 rounded bg-zinc-800 hover:bg-zinc-700 text-white text-sm transition"
-              >
-                Hủy
+        <div className="p-6 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+          {error && <div className="mb-4 p-3 bg-red-500/20 border border-red-500 text-red-500 rounded text-sm">{error}</div>}
+          
+          {activeTab === 'single' ? (
+            <form onSubmit={handleSubmitSingle} className="flex flex-col gap-4">
+              <div>
+                <label className="block text-sm font-medium text-zinc-400 mb-1">Link YouTube</label>
+                <input 
+                  type="text" value={url} onChange={handleUrlChange} required
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-3 py-2 focus:border-red-600 outline-none transition"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-400 mb-1">Tiêu đề (Tự động tải)</label>
+                <input 
+                  type="text" value={title} onChange={(e) => setTitle(e.target.value)} required
+                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-3 py-2 focus:border-red-600 outline-none transition"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-400 mb-1">Thể loại</label>
+                <input 
+                  type="text" 
+                  list="category-options"
+                  value={category} 
+                  onChange={(e) => setCategory(e.target.value)}
+                  placeholder="Nhập hoặc chọn thể loại..."
+                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-3 py-2 focus:border-red-600 outline-none transition"
+                  required
+                />
+                <datalist id="category-options">
+                  {categories.filter(c => c !== 'Tất cả').map(cat => (
+                    <option key={cat} value={cat} />
+                  ))}
+                </datalist>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-400 mb-1">Mô tả (Tùy chọn)</label>
+                <textarea 
+                  value={description} onChange={(e) => setDescription(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-3 py-2 focus:border-red-600 outline-none transition h-20 resize-none"
+                />
+              </div>
+              <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={isFull} 
+                  onChange={(e) => setIsFull(e.target.checked)}
+                  className="w-4 h-4 accent-red-600"
+                />
+                Đánh dấu phim này là Trọn bộ (Đã Full)
+              </label>
+              <button type="submit" className="mt-2 w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded font-bold transition">
+                Thêm Video
               </button>
-              <button 
-                type="submit" 
-                className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition"
-              >
-                Thêm phim
+            </form>
+          ) : (
+             <form onSubmit={handleSubmitChannel} className="flex flex-col gap-4">
+              <div className="text-xs text-blue-400 bg-blue-400/10 p-3 rounded border border-blue-400/20">
+                Tính năng này tự động phân tích tiêu đề để gắn nhãn "Đã Full" khi tải video về.
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-400 mb-1">Channel ID</label>
+                <input 
+                  type="text" value={channelId} onChange={(e) => setChannelId(e.target.value)} required
+                  placeholder="VD: UC_x5XG1OV2P6uZZ5FSM9Ttw"
+                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-3 py-2 focus:border-red-600 outline-none transition"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-400 mb-1">YouTube API Key</label>
+                <input 
+                  type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} required
+                  placeholder="AIzaSy..."
+                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-3 py-2 focus:border-red-600 outline-none transition"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-400 mb-1">Số lượng video (Tối đa 500)</label>
+                <input 
+                  type="number" value={maxVideos} onChange={(e) => setMaxVideos(e.target.value)} required
+                  min="1" max="500"
+                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-3 py-2 focus:border-red-600 outline-none transition"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-400 mb-1">Xếp vào Thể loại</label>
+                <input 
+                  type="text" 
+                  list="category-options-channel"
+                  value={category} 
+                  onChange={(e) => setCategory(e.target.value)}
+                  placeholder="Nhập hoặc chọn thể loại..."
+                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-3 py-2 focus:border-red-600 outline-none transition"
+                  required
+                />
+                <datalist id="category-options-channel">
+                  {categories.filter(c => c !== 'Tất cả').map(cat => (
+                    <option key={cat} value={cat} />
+                  ))}
+                </datalist>
+              </div>
+              <button type="submit" disabled={loading} className="mt-2 w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded font-bold transition disabled:opacity-50">
+                {loading ? 'Đang tải...' : 'Nhập Kênh'}
               </button>
-            </div>
-          </form>
-        )}
-
-        {/* NỘI DUNG TAB 2: NHẬP NGUYÊN KÊNH YOUTUBE */}
-        {activeTab === 'channel' && (
-          <form onSubmit={handleImportChannel} className="space-y-4">
-            <h3 className="text-lg font-bold text-white">Nhập nguyên kênh YouTube</h3>
-            {error && <div className="text-red-500 text-xs bg-red-950/50 p-2 rounded border border-red-900">{error}</div>}
-            
-            <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1">YouTube API Key</label>
-              <input 
-                type="text" 
-                value={apiKey} 
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="Nhập khóa API YouTube của bạn..."
-                required
-                className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1">Channel ID (ID Kênh)</label>
-              <input 
-                type="text" 
-                value={channelId} 
-                onChange={(e) => setChannelId(e.target.value)}
-                placeholder="Ví dụ: UC_x5XG1OV2P6uZZ5FSM9Ttw"
-                required
-                className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1">Số lượng video tối đa muốn lấy</label>
-              <input 
-                type="number" 
-                value={maxVideos} 
-                onChange={(e) => setMaxVideos(Number(e.target.value))}
-                min="1" 
-                max="50"
-                className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
-              />
-            </div>
-
-            <div className="flex justify-end gap-3 pt-2">
-              <button 
-                type="button" 
-                onClick={onClose}
-                className="px-4 py-2 rounded bg-zinc-800 hover:bg-zinc-700 text-white text-sm transition"
-              >
-                Hủy
-              </button>
-              <button 
-                type="submit" 
-                disabled={loading}
-                className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition disabled:opacity-50"
-              >
-                {loading ? 'Đang nhập...' : 'Nhập nguyên kênh'}
-              </button>
-            </div>
-          </form>
-        )}
-
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -649,127 +641,65 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies, db, a
 // --- Main App ---
 
 export default function App() {
-  const [movies, setMovies] = useState(() => {
-    const saved = localStorage.getItem('youflix_movies_v2');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { /* ignore */ }
+  useEffect(() => {
+    if (!document.getElementById('tailwind-cdn')) {
+      const script = document.createElement('script');
+      script.id = 'tailwind-cdn';
+      script.src = 'https://cdn.tailwindcss.com';
+      document.head.appendChild(script);
     }
-    return initialMovies;
-  });
+  }, []);
 
+  const [movies, setMovies] = useState(() => {
+    if (!useCloud) {
+      const saved = localStorage.getItem('youflix_movies_v2');
+      if (saved) {
+        try { return JSON.parse(saved); } catch (e) { /* ignore */ }
+      }
+      return initialMovies;
+    }
+    return [];
+  });
+  
   const [currentCategory, setCategory] = useState('Tất cả');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [user, setUser] = useState(null);
-  const [showOnlyFull, setShowOnlyFull] = useState(false);
-  const [dynamicCategories, setDynamicCategories] = useState([]);
   const [movieToDelete, setMovieToDelete] = useState(null);
-  const categories = ['Tất cả', 'Hành động', 'Hoạt hình', 'Viễn tưởng', 'Tình cảm', 'Kinh dị', 'Tru Tiên'];
+  const [showOnlyFull, setShowOnlyFull] = useState(false);
 
-  // Khai báo state trực tiếp trong App để không bao giờ bị lỗi undefined
-  const [newTitle, setNewTitle] = useState('');
-  const [newVideoId, setNewVideoId] = useState('');
-  const [newCategory, setNewCategory] = useState('Hành động');
-  const [newDesc, setNewDesc] = useState('');
-  const [newIsFull, setNewIsFull] = useState(false);
+  const [user, setUser] = useState(null);
 
-  // Hàm xử lý thêm phim nằm trực tiếp trong App
-  const handleAddMovieSubmit = async (e) => {
-    e.preventDefault();
-    if (!newTitle.trim() || !newVideoId.trim()) {
-      alert("Vui lòng nhập tên phim và mã video!");
-      return;
-    }
+  const dynamicCategories = useMemo(() => {
+    const uniqueCats = new Set(movies.map(m => m.category));
+    return ['Tất cả', ...Array.from(uniqueCats)];
+  }, [movies]);
 
-    const newMovie = {
-      id: Date.now().toString(),
-      title: newTitle.trim(),
-      videoId: newVideoId.trim(),
-      category: newCategory,
-      description: newDesc.trim() || 'Mô tả bộ phim.',
-      isFull: newIsFull
-    };
-
-    try {
-      if (useCloud && db) {
-        const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', newMovie.id);
-        await setDoc(movieDocRef, newMovie);
-      }
-      setMovies(prev => [newMovie, ...prev]);
-      setIsAddModalOpen(false);
-      
-      // Reset form
-      setNewTitle('');
-      setNewVideoId('');
-      setNewDesc('');
-      setNewIsFull(false);
-    } catch (error) {
-      console.error("Lỗi khi lưu phim:", error);
-      alert("Có lỗi xảy ra khi lưu phim!");
-    }
-  };
-useEffect(() => {
-    if (!useCloud || !db) return;
-
-    // Đường dẫn collection trên Firestore
-    const moviesRef = collection(db, 'artifacts', appId, 'public', 'data', 'movies');
-    
-    const unsubscribe = onSnapshot(moviesRef, (snapshot) => {
-      if (!snapshot.empty) {
-        const loadedMovies = [];
-        snapshot.forEach((doc) => {
-          loadedMovies.push(doc.data());
-        });
-        // Sắp xếp phim mới thêm lên đầu
-        loadedMovies.sort((a, b) => b.id.localeCompare(a.id));
-        setMovies(loadedMovies);
-      } else {
-        // Nếu database hoàn toàn trống, tự động đẩy danh sách phim hiện tại lên mây để mọi người cùng thấy
-        initialMovies.forEach(async (movie) => {
-          const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', movie.id);
-          await setDoc(movieDocRef, movie);
-        });
-      }
-    }, (error) => {
-      console.error("Lỗi tải dữ liệu phim từ Cloud:", error);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-
-  // Đồng bộ dữ liệu vào LocalStorage khi chạy độc lập
   useEffect(() => {
     if (!useCloud) {
       localStorage.setItem('youflix_movies_v2', JSON.stringify(movies));
+      return;
     }
+
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (error) {
+        console.error("Lỗi xác thực:", error);
+      }
+    };
+    initAuth();
+    
+    const unsubscribe = onAuthStateChanged(auth, setUser);
+    return () => unsubscribe();
   }, [movies]);
 
-// Khởi tạo Firebase an toàn nếu bật chế độ cloud
-useEffect(() => {
-  if (!useCloud || !auth) return;
-
-  const initAuth = async () => {
-    try {
-      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-        await signInWithCustomToken(auth, __initial_auth_token);
-      } else {
-        await signInAnonymously(auth);
-      }
-    } catch (error) {
-      console.error("Lỗi xác thực:", error);
-    }
-  };
-  initAuth();
-
-  const unsubscribe = onAuthStateChanged(auth, setUser);
-  return () => unsubscribe();
-}, []);
-
-  // Lấy dữ liệu từ Firestore khi đã kết nối cloud thành công
   useEffect(() => {
-    if (!useCloud || !user || !db) return;
+    if (!useCloud || !user) return;
 
     const moviesRef = collection(db, 'artifacts', appId, 'public', 'data', 'movies');
     
@@ -794,42 +724,20 @@ useEffect(() => {
     return () => unsubscribe();
   }, [user]);
 
-const handleAddMovie = async (e) => {
-  e.preventDefault();
-  
-  if (!newTitle.trim() || !newVideoId.trim()) {
-    alert("Vui lòng nhập tên phim và mã video YouTube!");
-    return;
-  }
-
-  const newMovie = {
-    id: Date.now().toString(),
-    title: newTitle.trim(),
-    videoId: newVideoId.trim(),
-    category: newCategory,
-    description: newDesc.trim() || 'Mô tả bộ phim.',
-    isFull: newIsFull
-  };
-
-  try {
-    if (db) {
-      const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', newMovie.id);
-      await setDoc(movieDocRef, newMovie);
+  const handleAddMovies = async (newMovies) => {
+    if (useCloud && user) {
+      newMovies.forEach(async (movie) => {
+        try {
+          const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', movie.id);
+          await setDoc(movieDocRef, movie);
+        } catch (e) {
+          console.error("Lỗi khi thêm phim:", e);
+        }
+      });
+    } else {
+      setMovies(prev => [...newMovies, ...prev]);
     }
-    
-    setMovies(prev => [newMovie, ...prev]);
-    setIsAddModalOpen(false);
-    
-    // Reset form
-    setNewTitle('');
-    setNewVideoId('');
-    setNewDesc('');
-    setNewIsFull(false);
-  } catch (error) {
-    console.error("Lỗi khi thêm phim:", error);
-    alert("Có lỗi xảy ra khi lưu phim lên mây!");
-  }
-};
+  };
 
   const handleDeleteRequest = (id) => {
     setMovieToDelete(id);
@@ -865,14 +773,14 @@ const handleAddMovie = async (e) => {
     });
   }, [movies, currentCategory, searchQuery, showOnlyFull]);
 
-const heroMovie = filteredMovies.length > 0 ? filteredMovies[0] : null;
+  const heroMovie = filteredMovies.length > 0 ? filteredMovies[0] : null;
 
   return (
-    <div className="min-h-screen bg-[#141414] text-white overflow-x-hidden font-sans w-full max-w-full m-0 p-0">
+    <div className="min-h-screen bg-[#141414] text-white overflow-x-hidden font-sans">
       <Navbar 
         categories={dynamicCategories}
-        currentCategory={currentCategory}
-        setCategory={setCategory}
+        currentCategory={currentCategory} 
+        setCategory={setCategory} 
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         onOpenAdd={() => setIsAddModalOpen(true)}
@@ -880,36 +788,36 @@ const heroMovie = filteredMovies.length > 0 ? filteredMovies[0] : null;
         setShowOnlyFull={setShowOnlyFull}
       />
 
-<main className="w-full min-h-screen bg-[#141414] pb-20 overflow-x-hidden pt-44 md:pt-28">
-    {!searchQuery && currentCategory === 'Tất cả' && <Hero movie={heroMovie} onPlay={setSelectedMovie} />}
-    
-<div className={`w-full relative z-10 ${!searchQuery && currentCategory === 'Tất cả' ? 'mt-4 md:-mt-32' : 'pt-4'}`}>
-      {currentCategory === 'Tất cả' && !searchQuery ? (
-        dynamicCategories.filter(c => c !== 'Tất cả').map(cat => {
-          const catMovies = filteredMovies.filter(m => m.category === cat);
-          if (catMovies.length === 0) return null;
-          return <MovieRow key={cat} title={cat} movies={catMovies} onMovieClick={setSelectedMovie} onDeleteMovie={handleDeleteRequest} />
-        })
-      ) : (
-        <div className="w-full px-8 md:px-16">
-          <h2 className="text-2xl font-bold mb-6 flex items-center gap-3 text-white">
-            {searchQuery ? `Kết quả tìm kiếm cho: "${searchQuery}"` : currentCategory}
-            {showOnlyFull && <span className="bg-red-600 text-white text-xs px-2 py-1 rounded uppercase tracking-wider">Đã Full</span>}
-          </h2>
-          <div className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {filteredMovies.map(movie => (
-              <MovieCard key={movie.id} movie={movie} onClick={setSelectedMovie} onDelete={handleDeleteRequest} />
-            ))}
-            {filteredMovies.length === 0 && (
-              <p className="text-zinc-500 w-full col-span-full py-20 text-center">Không tìm thấy nội dung phù hợp với bộ lọc hiện tại.</p>
-            )}
-          </div>
+      <main className="pb-20">
+        {!searchQuery && currentCategory === 'Tất cả' && <Hero movie={heroMovie} onPlay={setSelectedMovie} />}
+        
+        <div className={`relative z-10 ${!searchQuery && currentCategory === 'Tất cả' ? '-mt-32' : 'pt-28'}`}>
+          {currentCategory === 'Tất cả' && !searchQuery ? (
+            dynamicCategories.filter(c => c !== 'Tất cả').map(cat => {
+              const catMovies = filteredMovies.filter(m => m.category === cat);
+              if (catMovies.length === 0) return null;
+              return <MovieRow key={cat} title={cat} movies={catMovies} onMovieClick={setSelectedMovie} onDeleteMovie={handleDeleteRequest} />
+            })
+          ) : (
+            <div className="px-8">
+              <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+                {searchQuery ? `Kết quả tìm kiếm cho: "${searchQuery}"` : currentCategory}
+                {showOnlyFull && <span className="bg-red-600 text-white text-xs px-2 py-1 rounded uppercase tracking-wider">Đã Full</span>}
+              </h2>
+              <div className="flex flex-wrap gap-4">
+                {filteredMovies.map(movie => (
+                  <MovieCard key={movie.id} movie={movie} onClick={setSelectedMovie} onDelete={handleDeleteRequest} />
+                ))}
+                {filteredMovies.length === 0 && (
+                  <p className="text-zinc-500 w-full py-20 text-center">Không tìm thấy nội dung phù hợp với bộ lọc hiện tại.</p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-      )}
-    </div>
-     </main>
+      </main>
 
-      <footer className="w-full py-8 flex flex-col items-center text-center text-zinc-600 text-sm gap-2 bg-[#141414]">
+      <footer className="py-8 flex flex-col items-center text-center text-zinc-600 text-sm gap-2">
         <p>YouFlix - Clone Project. Dữ liệu lưu trữ thông minh.</p>
         <button 
           onClick={() => {
@@ -940,86 +848,13 @@ const heroMovie = filteredMovies.length > 0 ? filteredMovies[0] : null;
         />
       )}
       
-{isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-          <form onSubmit={handleAddMovieSubmit} className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 w-full max-w-md shadow-2xl space-y-4">
-            <h3 className="text-xl font-bold text-white mb-2">Thêm phim mới</h3>
-            
-            <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1">Tên phim</label>
-              <input 
-                type="text" 
-                value={newTitle} 
-                onChange={(e) => setNewTitle(e.target.value)}
-                placeholder="Nhập tên phim..."
-                required
-                className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1">Mã Video YouTube (videoId)</label>
-              <input 
-                type="text" 
-                value={newVideoId} 
-                onChange={(e) => setNewVideoId(e.target.value)}
-                placeholder="Ví dụ: dQw4w9WgXcQ"
-                required
-                className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1">Thể loại</label>
-              <select 
-                value={newCategory} 
-                onChange={(e) => setNewCategory(e.target.value)}
-                className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600"
-              >
-                {categories.filter(c => c !== 'Tất cả').map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1">Mô tả ngắn</label>
-              <textarea 
-                value={newDesc} 
-                onChange={(e) => setNewDesc(e.target.value)}
-                placeholder="Nhập mô tả..."
-                className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-600 resize-none h-20"
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <input 
-                type="checkbox" 
-                id="isFullCheckbox"
-                checked={newIsFull} 
-                onChange={(e) => setNewIsFull(e.target.checked)}
-                className="w-4 h-4 accent-red-600"
-              />
-              <label htmlFor="isFullCheckbox" className="text-sm text-zinc-300 cursor-pointer">Đã Full bộ / Trọn bộ</label>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-2">
-              <button 
-                type="button" 
-                onClick={() => setIsAddModalOpen(false)}
-                className="px-4 py-2 rounded bg-zinc-800 hover:bg-zinc-700 text-white text-sm transition"
-              >
-                Hủy
-              </button>
-              <button 
-                type="submit" 
-                className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition"
-              >
-                Thêm phim
-              </button>
-            </div>
-          </form>
-        </div>
+      {isAddModalOpen && (
+        <AddMovieModal 
+          categories={dynamicCategories}
+          existingMovies={movies}
+          onClose={() => setIsAddModalOpen(false)} 
+          onAddMovies={handleAddMovies}
+        />
       )}
 
       <ConfirmDialog 
