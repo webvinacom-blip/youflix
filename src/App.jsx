@@ -3,23 +3,22 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from 'firebase/firestore';
 
-// Ép buộc bật Cloud Firestore nếu đã cấu hình Firebase
-let useCloud = true; // Chuyển thành true để đồng bộ chung dữ liệu
-let app, auth, db, appId = 'youflix-shared-room-v1'; // Đặt tên phòng chung cố định cho mọi người dùng
+// Khởi tạo an toàn để tránh sập màn hình đen
+let app, auth, db;
+let useCloud = false;
+let appId = 'youflix-shared-room-v1';
 
 try {
-  if (typeof __firebase_config !== 'undefined') {
+  if (typeof __firebase_config !== 'undefined' && __firebase_config) {
     const firebaseConfig = JSON.parse(__firebase_config);
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
     appId = typeof __app_id !== 'undefined' ? __app_id : 'youflix-shared-room-v1';
-  } else {
-    // Nếu deploy trên Vercel bình thường, bạn có thể thay cấu hình Firebase của bạn vào đây nếu muốn dùng chung database
-    // Hoặc ứng dụng sẽ dùng chung một nhánh công khai
+    useCloud = true;
   }
 } catch (e) {
-  console.warn("Using fallback mode");
+  console.warn("Running in LocalStorage fallback mode due to missing cloud config");
 }
 
 // --- Icons ---
@@ -702,14 +701,44 @@ export default function App() {
     return () => unsubscribe();
   }, [movies]);
 
+const [user, setUser] = useState(null);
+
+  // Đồng bộ dữ liệu vào LocalStorage khi chạy độc lập
+  useEffect(() => {
+    if (!useCloud) {
+      localStorage.setItem('youflix_movies_v2', JSON.stringify(movies));
+    }
+  }, [movies]);
+
+// Khởi tạo Firebase an toàn nếu bật chế độ cloud
 useEffect(() => {
-    if (!user) return;
+  if (!useCloud || !auth) return;
+
+  const initAuth = async () => {
+    try {
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        await signInWithCustomToken(auth, __initial_auth_token);
+      } else {
+        await signInAnonymously(auth);
+      }
+    } catch (error) {
+      console.error("Lỗi xác thực:", error);
+    }
+  };
+  initAuth();
+
+  const unsubscribe = onAuthStateChanged(auth, setUser);
+  return () => unsubscribe();
+}, []);
+
+  // Lấy dữ liệu từ Firestore khi đã kết nối cloud thành công
+  useEffect(() => {
+    if (!useCloud || !user || !db) return;
 
     const moviesRef = collection(db, 'artifacts', appId, 'public', 'data', 'movies');
     
     const unsubscribe = onSnapshot(moviesRef, (snapshot) => {
       if (snapshot.empty) {
-        // Nếu database trống, tự động thêm phim mẫu khởi tạo
         initialMovies.forEach(async (movie) => {
           const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', movie.id);
           await setDoc(movieDocRef, movie);
