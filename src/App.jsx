@@ -839,6 +839,7 @@ export default function App() {
         onOpenAdd={() => setIsAddModalOpen(true)}
         showOnlyFull={showOnlyFull}
         setShowOnlyFull={setShowOnlyFull}
+        onNavigate={() => setSelectedMovie(null)} // Thêm dòng này để sửa lỗi "không vào được kênh"
       />
 
       <main className="pb-20">
