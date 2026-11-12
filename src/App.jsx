@@ -238,11 +238,10 @@ function MovieRow({ title, movies, onMovieClick, onDeleteMovie }) {
   if (movies.length === 0) return null;
   
   return (
-    // 1. Thêm w-full và overflow-hidden vào thẻ cha ngoài cùng để ngăn chặn tràn trang
-    <div className="mb-8 relative w-full overflow-hidden">
+    // Bổ sung min-w-0 và max-w-full vào đây
+    <div className="mb-8 relative w-full min-w-0 max-w-full">
       <h2 className="text-xl font-bold text-white mb-4 px-8">{title}</h2>
       
-      {/* 2. Thêm w-full vào thẻ lưới và thiết lập auto-cols co giãn theo kích thước màn hình */}
       <div 
         className="grid grid-rows-2 grid-flow-col auto-cols-[140px] sm:auto-cols-[160px] md:auto-cols-[200px] gap-4 pb-4 px-8 overflow-x-auto scroll-smooth w-full"
         style={{ scrollbarWidth: 'thin' }}
@@ -826,7 +825,7 @@ useEffect(() => {
   const heroMovie = filteredMovies.length > 0 ? filteredMovies[0] : null;
 
   return (
-    <div className="min-h-screen bg-[#141414] text-white overflow-x-hidden font-sans">
+    <div className="min-h-screen bg-[#141414] text-white overflow-x-hidden font-sans overflow-x-hidden">
       <Navbar 
         categories={dynamicCategories}
         currentCategory={currentCategory} 
