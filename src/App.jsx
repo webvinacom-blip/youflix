@@ -101,7 +101,7 @@ function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel }) {
 
 function Navbar({ categories, currentCategory, setCategory, searchQuery, setSearchQuery, onOpenAdd, showOnlyFull, setShowOnlyFull }) {
   return (
-    <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/90 to-transparent pb-3 md:pb-4 pt-3 md:pt-4 px-4 md:px-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-4 transition-all duration-300">
+    <nav className="fixed top-0 w-full z-120 bg-gradient-to-b from-black/90 to-transparent pb-3 md:pb-4 pt-3 md:pt-4 px-4 md:px-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-4 transition-all duration-300">
       <div className="flex items-center gap-4 md:gap-8 w-full md:w-auto overflow-hidden">
         <h1 className="text-red-600 font-black text-2xl md:text-3xl tracking-tighter cursor-pointer shrink-0" onClick={() => setCategory('Tất cả')}>
           YOUFLIX
