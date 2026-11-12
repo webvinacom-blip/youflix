@@ -203,7 +203,7 @@ function Hero({ movie, onPlay }) {
         <div className="flex gap-2 md:gap-4">
           <button 
             onClick={() => onPlay(movie)}
-            className="flex items-center gap-1 md:gap-2 bg-white text-black px-4 md:px-8 py-1.5 md:py-2.5 rounded hover:bg-white/80 transition font-bold text-sm md:text-lg"
+            className="flex items-center gap-1 md:gap-2 bg-white text-white px-4 md:px-8 py-1.5 md:py-2.5 rounded hover:bg-white/80 transition font-bold text-sm md:text-lg"
           >
             <Play size={18} className="md:w-6 md:h-6" fill="currentColor" /> Phát ngay
           </button>
@@ -247,7 +247,7 @@ function MovieCard({ movie, onClick, onDelete, className = "flex-none w-[140px] 
         <h3 className="text-white font-bold text-xs md:text-sm line-clamp-2 mb-1">{movie.title}</h3>
         <p className="text-zinc-400 text-[10px] md:text-xs">{movie.category}</p>
         <div className="flex items-center gap-1 md:gap-2 mt-1 md:mt-2">
-          <button className="bg-white text-black rounded-full p-1 md:p-1.5 hover:bg-zinc-200 transition pointer-events-auto">
+          <button className="bg-white text-white rounded-full p-1 md:p-1.5 hover:bg-zinc-200 transition pointer-events-auto">
             <Play size={10} className="md:w-3.5 md:h-3.5" fill="currentColor" />
           </button>
         </div>
@@ -292,75 +292,59 @@ function MovieRow({ title, movies, onMovieClick, onDeleteMovie, onDeleteCategory
   );
 }
 
-function DetailView({ movie: initialMovie, allMovies, onClose, onMovieClick, onDelete, isMiniPlayer, onToggleMiniPlayer }) {
+// CẬP NHẬT HOÀN TOÀN: DetailView được tinh chỉnh logic Native Playlist để luôn chạy đúng tập được click
+function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniPlayer, onToggleMiniPlayer }) {
   const [autoNext, setAutoNext] = useState(true);
-  const autoNextRef = useRef(true);
   
-  // Tách State hiển thị thông tin UI (Title, Desc) ra khỏi Iframe
-  const [displayMovie, setDisplayMovie] = useState(initialMovie);
-  const [iframeSrc, setIframeSrc] = useState('');
+  // State hiển thị thông tin phim trên giao diện (Độc lập với Iframe đang chạy ngầm)
+  const [displayMovie, setDisplayMovie] = useState(movie);
+  
+  useEffect(() => {
+    setDisplayMovie(movie); // Đồng bộ lại giao diện ngay khi người dùng chủ động click tập phim mới
+  }, [movie.id]);
+
   const iframeRef = useRef(null);
   const similarRowRef = useRef(null);
 
-  useEffect(() => { 
-    autoNextRef.current = autoNext; 
-  }, [autoNext]);
-
-  // CHÌA KHÓA VƯỢT LỖI CHẠY NỀN: Nạp trực tiếp list video tiếp theo vào Youtube (native playlist)
-  useEffect(() => {
-    setDisplayMovie(initialMovie);
-    
-    let nextVideoIds = '';
-    if (autoNextRef.current) {
-      const similar = allMovies.filter(m => m.category === initialMovie.category && m.id !== initialMovie.id);
-      let nextList = similar;
-      if (initialMovie.playlistId && initialMovie.playlistIndex !== undefined) {
-        nextList = similar.filter(m => (m.playlistIndex || 0) > initialMovie.playlistIndex).sort((a,b) => (a.playlistIndex || 0) - (b.playlistIndex || 0));
-        if (nextList.length === 0) nextList = similar; 
-      }
-      nextVideoIds = nextList.map(m => m.videoId).slice(0, 30).join(',');
-    }
-
-    const newSrc = `https://www.youtube.com/embed/${initialMovie.videoId}?autoplay=1&rel=0&cc_load_policy=0&iv_load_policy=3&cc_lang_pref=en&modestbranding=1&playsinline=1&showinfo=0&controls=1&fs=1&disablekb=0&enablejsapi=1&origin=${window.location.origin}${nextVideoIds ? `&playlist=${nextVideoIds}` : ''}`;
-    setIframeSrc(newSrc);
-    
-    // Chỉ tạo lại iframe khi người dùng click dứt khoát vào phim mới từ ngoài trang chủ
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialMovie.id]); 
-
-  // Lắng nghe YouTube tự động Next -> Đổi Text giao diện mà KHÔNG load lại video
-  useEffect(() => {
-    const handleMessage = (e) => {
-      if (!e.origin.includes('youtube.com') && !e.origin.includes('youtube-nocookie.com')) return;
-      try {
-        const data = JSON.parse(e.data);
-        if (data.event === 'infoDelivery' && data.info?.videoData?.video_id) {
-          const currentPlayingId = data.info.videoData.video_id;
-          
-          if (currentPlayingId !== displayMovie.videoId) {
-            const nextMeta = allMovies.find(m => m.videoId === currentPlayingId);
-            if (nextMeta) {
-              setDisplayMovie(nextMeta); // UI đổi chữ, Iframe vẫn chạy tiếp trơn tru
-            }
-          }
-        }
-      } catch (err) {}
-    };
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [displayMovie.videoId, allMovies]);
-
-  const similarMovies = useMemo(() => {
-    if (displayMovie.playlistId) {
+  // 1. TÍNH TOÁN DANH SÁCH GỐC (Chuẩn thứ tự tập)
+  const fullList = useMemo(() => {
+    if (movie.playlistId) {
+      // Nếu là Playlist: Sắp xếp theo đúng thứ tự tác giả đã tạo (playlistIndex)
       return allMovies
-        .filter(m => m.playlistId === displayMovie.playlistId && m.id !== displayMovie.id)
-        .sort((a, b) => (a.playlistIndex || 0) - (b.playlistIndex || 0));
+        .filter(m => m.playlistId === movie.playlistId)
+        .sort((a,b) => (a.playlistIndex || 0) - (b.playlistIndex || 0));
     }
+    // Nếu là Kênh/Thể loại: Sắp xếp từ Cũ nhất (Tập 1) -> Mới nhất (Tập cuối) để Auto-next đúng trình tự xem
     return allMovies
-      .filter(m => m.category === displayMovie.category && m.id !== displayMovie.id)
-      .slice(0, 15);
-  }, [displayMovie, allMovies]);
+      .filter(m => m.category === movie.category)
+      .sort((a,b) => a.id.localeCompare(b.id)); 
+  }, [movie, allMovies]);
+
+  // 2. SINH HÀNG ĐỢI CHO YOUTUBE NATIVE PLAYLIST (CHÌA KHÓA VƯỢT LỖI)
+  const iframeSrc = useMemo(() => {
+    // Tìm chính xác vị trí của video vừa được click trong danh sách gốc
+    const currentIndex = fullList.findIndex(m => m.id === movie.id);
+    let nextVideoIds = '';
+    
+    if (autoNext) {
+      // Bắt đầu xếp hàng đợi từ NGAY LIỀN KỀ phía sau video đang click
+      const nextVideos = fullList.slice(currentIndex + 1);
+      // Nếu chạy hết list, vòng lặp lại từ đầu cho tới sát video hiện tại
+      const prevVideos = fullList.slice(0, currentIndex);
+      const queue = [...nextVideos, ...prevVideos];
+      
+      // Giới hạn 40 tập để URL không bị quá dài dẫn đến lỗi kết nối
+      nextVideoIds = queue.map(m => m.videoId).slice(0, 40).join(',');
+    }
+
+    // Youtube sẽ luôn Load video đầu tiên trong param 'src', sau đó mới next ngầm sang list 'playlist'
+    return `https://www.youtube.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_load_policy=0&iv_load_policy=3&cc_lang_pref=en&modestbranding=1&playsinline=1&showinfo=0&controls=1&fs=1&disablekb=0&enablejsapi=1&origin=${window.location.origin}${nextVideoIds ? `&playlist=${nextVideoIds}` : ''}`;
+  }, [movie.id, movie.videoId, fullList, autoNext]); // Chỉ sinh lại Iframe khi tập Gốc thay đổi hoặc đổi cài đặt
+
+  // 3. DANH SÁCH UI NỘI DUNG TƯƠNG TỰ BÊN DƯỚI (Loại bỏ tập đang phát)
+  const similarMoviesUI = useMemo(() => {
+    return fullList.filter(m => m.id !== displayMovie.id);
+  }, [fullList, displayMovie]);
 
   const handleScroll = (direction) => {
     if (similarRowRef.current) {
@@ -379,6 +363,29 @@ function DetailView({ movie: initialMovie, allMovies, onClose, onMovieClick, onD
     }
     return () => { document.body.style.overflow = 'auto'; };
   }, [isMiniPlayer]);
+
+  // 4. LẮNG NGHE YOUTUBE NEXT NGẦM ĐỂ ĐỔI TEXT GIAO DIỆN
+  useEffect(() => {
+    const handleMessage = (e) => {
+      if (!e.origin.includes('youtube.com') && !e.origin.includes('youtube-nocookie.com')) return;
+      try {
+        const data = JSON.parse(e.data);
+        if (data.event === 'infoDelivery' && data.info?.videoData?.video_id) {
+          const currentPlayingId = data.info.videoData.video_id;
+          
+          if (currentPlayingId !== displayMovie.videoId) {
+            const nextMeta = allMovies.find(m => m.videoId === currentPlayingId);
+            if (nextMeta) {
+              setDisplayMovie(nextMeta); // Chữ đổi ngay lập tức, nhưng Iframe không bị xoá mất
+            }
+          }
+        }
+      } catch (err) {}
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [displayMovie.videoId, allMovies]);
 
   return (
     <div className={isMiniPlayer 
@@ -487,7 +494,7 @@ function DetailView({ movie: initialMovie, allMovies, onClose, onMovieClick, onD
             {displayMovie.playlistId ? 'Danh sách phát (Playlist)' : 'Nội dung tương tự'}
           </h3>
           <div className="relative w-full overflow-hidden">
-            {similarMovies.length > 0 && (
+            {similarMoviesUI.length > 0 && (
               <button 
                 onClick={() => handleScroll('left')}
                 className="absolute left-0 top-0 bottom-4 w-8 md:w-12 bg-black/50 hover:bg-black/80 text-white z-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex rounded-r-md"
@@ -500,8 +507,8 @@ function DetailView({ movie: initialMovie, allMovies, onClose, onMovieClick, onD
               ref={similarRowRef}
               className="flex gap-2 md:gap-4 overflow-x-auto pb-4 no-scrollbar scroll-smooth snap-x snap-mandatory"
             >
-              {similarMovies.length > 0 ? (
-                similarMovies.map(m => (
+              {similarMoviesUI.length > 0 ? (
+                similarMoviesUI.map(m => (
                   <MovieCard 
                     key={m.id} 
                     movie={m} 
@@ -515,7 +522,7 @@ function DetailView({ movie: initialMovie, allMovies, onClose, onMovieClick, onD
               )}
             </div>
 
-            {similarMovies.length > 0 && (
+            {similarMoviesUI.length > 0 && (
               <button 
                 onClick={() => handleScroll('right')}
                 className="absolute right-0 top-0 bottom-4 w-8 md:w-12 bg-black/50 hover:bg-black/80 text-white z-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex rounded-l-md"
