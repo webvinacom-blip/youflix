@@ -50,6 +50,12 @@ const Trash2 = ({ size = 24, className = "" }) => (
 const CheckCircle = ({ size = 24, className = "" }) => (
   <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
 );
+const Minimize2 = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 14 10 14 10 20"></polyline><polyline points="20 10 14 10 14 4"></polyline><line x1="14" y1="10" x2="21" y2="3"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+);
+const Maximize2 = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+);
 
 // --- Utility Functions ---
 const extractYoutubeId = (url) => {
@@ -81,7 +87,7 @@ const initialMovies = [
 function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel }) {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[300] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-zinc-900 w-full max-w-sm rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10 p-6">
         <h3 className="text-lg md:text-xl font-bold text-white mb-2">{title}</h3>
         <p className="text-zinc-400 mb-6 text-xs md:text-sm">{message}</p>
@@ -94,12 +100,11 @@ function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel }) {
   );
 }
 
-// Bổ sung onNavigate để Navbar đóng DetailView khi bấm chuyển kênh
 function Navbar({ categories, currentCategory, setCategory, searchQuery, setSearchQuery, onOpenAdd, showOnlyFull, setShowOnlyFull, onNavigate }) {
   const handleNavClick = (cat) => {
     setCategory(cat);
     setSearchQuery('');
-    if (onNavigate) onNavigate(); // Báo về App để đóng trang xem phim
+    if (onNavigate) onNavigate(); 
   };
 
   return (
@@ -276,8 +281,7 @@ function MovieRow({ title, movies, onMovieClick, onDeleteMovie, onDeleteCategory
   );
 }
 
-// Thiết kế chuẩn không đè video: spacer > button > video
-function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete }) {
+function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniPlayer, onToggleMiniPlayer }) {
   const similarMovies = useMemo(() => {
     return allMovies
       .filter(m => m.category === movie.category && m.id !== movie.id)
@@ -295,34 +299,73 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete }) {
     }
   };
 
+  // Quản lý thanh cuộn của trang gốc khi ở chế độ thu nhỏ
+  useEffect(() => {
+    if (!isMiniPlayer) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    return () => { document.body.style.overflow = 'auto'; };
+  }, [isMiniPlayer]);
+
   return (
-    <div className="fixed inset-0 z-[40] bg-[#141414] overflow-y-auto">
+    <div className={isMiniPlayer 
+      ? "fixed bottom-4 right-4 md:bottom-6 md:right-6 w-72 sm:w-80 md:w-96 z-[200] bg-zinc-900 rounded-lg shadow-2xl border border-zinc-700 overflow-hidden flex flex-col transition-all duration-300 ease-in-out"
+      : "fixed inset-0 z-[40] bg-[#141414] overflow-y-auto transition-all duration-300 ease-in-out"}>
       
-      {/* 1. Khoảng đệm chiều cao để tránh Navbar che khuất nội dung */}
-      <div className="w-full h-16 md:h-20 shrink-0"></div>
+      {/* 1. Header khi ở chế độ BÌNH THƯỜNG (FULL) */}
+      {!isMiniPlayer && <div className="w-full h-16 md:h-20 shrink-0"></div>}
+      
+      {!isMiniPlayer && (
+        <div className="w-full px-4 md:px-6 py-2 flex items-center justify-between">
+          <button 
+            onClick={onClose}
+            className="flex items-center gap-1.5 md:gap-2 text-white bg-zinc-800 hover:bg-zinc-700 px-3 md:px-4 py-1.5 md:py-2 rounded-full transition text-xs md:text-sm font-medium border border-zinc-700 shadow-md cursor-pointer"
+          >
+            <ChevronLeft size={18} className="md:w-5 md:h-5" /> Quay lại
+          </button>
+          
+          <button 
+            onClick={onToggleMiniPlayer}
+            className="flex items-center gap-1.5 text-white bg-blue-600 hover:bg-blue-700 px-3 md:px-4 py-1.5 md:py-2 rounded-full transition text-xs md:text-sm font-medium shadow-md cursor-pointer"
+          >
+            <Minimize2 size={16} className="md:w-4 md:h-4" /> Thu nhỏ
+          </button>
+        </div>
+      )}
 
-      {/* 2. Hàng chứa nút Quay lại nằm ĐỘC LẬP phía trên video */}
-      <div className="w-full px-4 md:px-6 py-2 flex items-start">
-        <button 
-          onClick={onClose}
-          className="flex items-center gap-1.5 md:gap-2 text-white bg-zinc-800 hover:bg-zinc-700 px-3 md:px-4 py-1.5 md:py-2 rounded-full transition text-xs md:text-sm font-medium border border-zinc-700 shadow-md cursor-pointer"
+      {/* 2. Header khi ở chế độ THU NHỎ (MINI PLAYER) */}
+      {isMiniPlayer && (
+        <div 
+          className="flex items-center justify-between px-3 py-2 bg-zinc-800/90 backdrop-blur cursor-pointer hover:bg-zinc-700 transition" 
+          onClick={onToggleMiniPlayer} 
+          title="Phóng to"
         >
-          <ChevronLeft size={18} className="md:w-5 md:h-5" /> Quay lại
-        </button>
-      </div>
+          <div className="flex items-center gap-2 overflow-hidden w-full pr-2">
+            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0"></div>
+            <h3 className="text-xs font-bold text-white truncate">{movie.title}</h3>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button onClick={(e) => { e.stopPropagation(); onToggleMiniPlayer(); }} className="text-zinc-300 hover:text-white p-1"><Maximize2 size={14} /></button>
+            <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-zinc-300 hover:text-red-500 p-1"><X size={16} /></button>
+          </div>
+        </div>
+      )}
 
-      {/* 3. Khung phát video YouTube (tự động đẩy xuống dưới nút bấm) */}
-      <div className="w-full h-[35vh] sm:h-[50vh] lg:h-[80vh] bg-black">
+      {/* 3. Khung Video (tự co giãn không reload) */}
+      <div className={isMiniPlayer ? "w-full aspect-video bg-black" : "w-full h-[35vh] sm:h-[50vh] lg:h-[80vh] bg-black"}>
         <iframe 
-          src={`https://www.youtube.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_load_policy=0&iv_load_policy=3&cc_lang_pref=none&modestbranding=1&playsinline=1&showinfo=0&controls=1&fs=1&disablekb=0&enablejsapi=1&origin=${window.location.origin}`}
+          src={`https://www.youtube.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_load_policy=0&iv_load_policy=3&cc_lang_pref=vm&modestbranding=1&playsinline=1&showinfo=0&controls=1&fs=1&disablekb=0&enablejsapi=1&origin=${window.location.origin}`}
           title={movie.title}
-          className="w-full h-full border-0"
+          className={`w-full h-full border-0 ${isMiniPlayer ? "pointer-events-none" : ""}`}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowFullScreen
+          allowFullScreen={!isMiniPlayer}
         ></iframe>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-12 flex flex-col gap-8 md:gap-12">
+      {/* 4. Nội dung chi tiết (Chỉ hiện khi ở chế độ Full) */}
+      <div className={isMiniPlayer ? "hidden" : "max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-12 flex flex-col gap-8 md:gap-12"}>
         <div>
           <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-3 md:mb-4">
             <span className="text-green-500 font-bold text-sm md:text-lg">Độ phân giải cao</span>
@@ -679,7 +722,6 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
 // --- Main App ---
 
 export default function App() {
-  // Lấy dữ liệu ngay khi khởi tạo state
   const [movies, setMovies] = useState(() => {
     if (!useCloud) {
       const saved = localStorage.getItem('youflix_movies_v2');
@@ -694,6 +736,10 @@ export default function App() {
   const [currentCategory, setCategory] = useState('Tất cả');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMovie, setSelectedMovie] = useState(null);
+  
+  // Trạng thái thu nhỏ video
+  const [isMiniPlayer, setIsMiniPlayer] = useState(false);
+  
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [movieToDelete, setMovieToDelete] = useState(null);
   const [categoryToDelete, setCategoryToDelete] = useState(null);
@@ -722,7 +768,6 @@ export default function App() {
     const moviesRef = collection(db, 'artifacts', appId, 'public', 'data', 'movies');
     const unsubscribe = onSnapshot(moviesRef, (snapshot) => {
       if (snapshot.empty && movies.length === 0) {
-        // Lần đầu chạy chưa có data trên Firebase thì đẩy data mặc định lên
         initialMovies.forEach(async (movie) => {
           await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'movies', movie.id), movie);
         });
@@ -782,6 +827,7 @@ export default function App() {
 
       if (selectedMovie && selectedMovie.id === movieToDelete) {
         setSelectedMovie(null);
+        setIsMiniPlayer(false);
       }
       setMovieToDelete(null);
     }
@@ -810,6 +856,13 @@ export default function App() {
     }
   };
 
+  // Hàm chọn phim mới: Đảm bảo tắt Mini Player và scroll lên top
+  const handleSelectMovie = (movie) => {
+    setSelectedMovie(movie);
+    setIsMiniPlayer(false);
+    window.scrollTo(0,0);
+  };
+
   const filteredMovies = useMemo(() => {
     return movies.filter(m => {
       const matchCat = currentCategory === 'Tất cả' || m.category === currentCategory;
@@ -833,11 +886,11 @@ export default function App() {
         onOpenAdd={() => setIsAddModalOpen(true)}
         showOnlyFull={showOnlyFull}
         setShowOnlyFull={setShowOnlyFull}
-        onNavigate={() => setSelectedMovie(null)} 
+        onNavigate={() => { setSelectedMovie(null); setIsMiniPlayer(false); }} 
       />
 
       <main className="pb-20">
-        {!searchQuery && currentCategory === 'Tất cả' && <Hero movie={heroMovie} onPlay={setSelectedMovie} />}
+        {!searchQuery && currentCategory === 'Tất cả' && <Hero movie={heroMovie} onPlay={handleSelectMovie} />}
         
         <div className={`relative w-full z-10 ${!searchQuery && currentCategory === 'Tất cả' ? '-mt-16 md:-mt-32' : 'pt-24 md:pt-28'}`}>
           {currentCategory === 'Tất cả' && !searchQuery ? (
@@ -848,7 +901,7 @@ export default function App() {
                 key={cat} 
                 title={cat} 
                 movies={catMovies} 
-                onMovieClick={setSelectedMovie} 
+                onMovieClick={handleSelectMovie} 
                 onDeleteMovie={handleDeleteRequest} 
                 onDeleteCategory={setCategoryToDelete}
               />
@@ -876,7 +929,7 @@ export default function App() {
                   <MovieCard 
                     key={movie.id} 
                     movie={movie} 
-                    onClick={setSelectedMovie} 
+                    onClick={handleSelectMovie} 
                     onDelete={handleDeleteRequest}
                     className="flex-none w-[140px] sm:w-[160px] md:w-[220px] lg:w-[256px]"
                   />
@@ -911,13 +964,16 @@ export default function App() {
         </button>
       </footer>
 
+      {/* Truyền các props quản lý Mini Player vào DetailView */}
       {selectedMovie && (
         <DetailView 
           movie={selectedMovie} 
           allMovies={movies}
-          onClose={() => setSelectedMovie(null)} 
-          onMovieClick={setSelectedMovie}
+          onClose={() => { setSelectedMovie(null); setIsMiniPlayer(false); }} 
+          onMovieClick={handleSelectMovie}
           onDelete={handleDeleteRequest}
+          isMiniPlayer={isMiniPlayer}
+          onToggleMiniPlayer={() => setIsMiniPlayer(!isMiniPlayer)}
         />
       )}
       
