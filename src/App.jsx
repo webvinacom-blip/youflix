@@ -357,7 +357,7 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
       {/* 3. Khung Video */}
       <div className={isMiniPlayer ? "w-full aspect-video bg-black" : "w-full h-[35vh] sm:h-[50vh] lg:h-[80vh] bg-black"}>
         <iframe 
-          src={`https://www.youtube.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_load_policy=0&hl=en&iv_load_policy=3&modestbranding=1&playsinline=1&controls=1&fs=1&disablekb=0&enablejsapi=1&origin=${window.location.origin}`}
+          src={`https://www.youtube.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_load_policy=0&hl=vm&iv_load_policy=3&modestbranding=1&playsinline=1&controls=1&fs=1&disablekb=0&enablejsapi=1&origin=${window.location.origin}`}
           title={movie.title}
           className={`w-full h-full border-0 ${isMiniPlayer ? "pointer-events-none" : ""}`}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
