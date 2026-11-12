@@ -295,14 +295,15 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete }) {
       </button>
       
       <div className="w-full h-[35vh] sm:h-[50vh] lg:h-[80vh] bg-black">
-        <iframe 
-          src={`https://www.youtube.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_load_policy=0&hl=en`}
-          title={movie.title}
-          className="w-full h-full border-0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowFullScreen
-        ></iframe>
-      </div>
+        <div className="w-full h-[35vh] sm:h-[50vh] lg:h-[80vh] bg-black">
+  <iframe
+    src={`https://www.youtube-nocookie.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_lang_pref=none&hl=en`}
+    title={movie.title}
+    className="w-full h-full border-0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    allowFullScreen
+  ></iframe>
+</div>
 
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-12 flex flex-col gap-8 md:gap-12">
         <div>
