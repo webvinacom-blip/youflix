@@ -64,6 +64,20 @@ const extractYoutubeId = (url) => {
   return (match && match[7].length === 11) ? match[7] : false;
 };
 
+// HÀM MỚI: Trích xuất ID Playlist từ URL hoặc lấy luôn chuỗi nếu người dùng nhập ID
+const extractPlaylistId = (urlOrId) => {
+  if (!urlOrId) return '';
+  try {
+    if (urlOrId.includes('youtube.com') || urlOrId.includes('youtu.be')) {
+      const urlObj = new URL(urlOrId);
+      return urlObj.searchParams.get('list') || urlOrId;
+    }
+  } catch (e) {
+    // Không phải URL hợp lệ, giả định đó là Playlist ID
+  }
+  return urlOrId;
+};
+
 const getThumbnail = (videoId) => `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
 const getHighResThumbnail = (videoId) => `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
 
@@ -282,7 +296,6 @@ function MovieRow({ title, movies, onMovieClick, onDeleteMovie, onDeleteCategory
 }
 
 function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniPlayer, onToggleMiniPlayer }) {
-  // Trạng thái Bật/Tắt tự động Next Video
   const [autoNext, setAutoNext] = useState(true);
   const iframeRef = useRef(null);
 
@@ -303,7 +316,6 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
     }
   };
 
-  // Quản lý scroll khi bật Mini Player
   useEffect(() => {
     if (!isMiniPlayer) {
       document.body.style.overflow = 'hidden';
@@ -313,27 +325,19 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
     return () => { document.body.style.overflow = 'auto'; };
   }, [isMiniPlayer]);
 
-  // Lắng nghe sự kiện YouTube iframe để Tự động Next video
   useEffect(() => {
     const handleMessage = (e) => {
-      // Đảm bảo tin nhắn đến từ iframe của youtube
       if (!e.origin.includes('youtube.com') && !e.origin.includes('youtube-nocookie.com')) return;
-      
       try {
         const data = JSON.parse(e.data);
-        
-        // Kiểm tra mã sự kiện khi video kết thúc (PlayerState === 0)
         const isEnded = (data.event === 'onStateChange' && data.info === 0) || 
                         (data.event === 'infoDelivery' && data.info?.playerState === 0);
 
         if (isEnded && autoNext && similarMovies.length > 0) {
-          // Video đã chạy xong -> tự động cuộn trang lên đầu và phát phim tiếp theo
           window.scrollTo(0, 0);
           onMovieClick(similarMovies[0]);
         }
-      } catch (err) {
-        // Bỏ qua các tin nhắn không phải JSON hoặc lỗi phân tích
-      }
+      } catch (err) {}
     };
 
     window.addEventListener('message', handleMessage);
@@ -386,12 +390,11 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
         <iframe 
           ref={iframeRef}
           onLoad={(e) => {
-            // Gửi tin nhắn kích hoạt lắng nghe sự kiện tới YouTube Player
             if (e.target && e.target.contentWindow) {
               e.target.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), '*');
             }
           }}
-          src={`https://www.youtube.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_load_policy=0&iv_load_policy=3&cc_lang_pref=none&hl=vm&modestbranding=1&playsinline=1&showinfo=0&controls=1&fs=1&disablekb=0&enablejsapi=1&origin=${window.location.origin}`}
+          src={`https://www.youtube.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_load_policy=0&iv_load_policy=3&cc_lang_pref=en&modestbranding=1&playsinline=1&showinfo=0&controls=1&fs=1&disablekb=0&enablejsapi=1&origin=${window.location.origin}`}
           title={movie.title}
           className={`w-full h-full border-0 ${isMiniPlayer ? "pointer-events-none" : ""}`}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -411,7 +414,6 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
             )}
             <span className="bg-zinc-800 text-white text-xs md:text-sm px-2 md:px-3 py-1 rounded-full">{movie.category}</span>
             
-            {/* TÙY CHỌN BẬT TẮT AUTO-NEXT */}
             <label className="flex items-center gap-2 ml-auto text-xs md:text-sm text-zinc-300 cursor-pointer bg-zinc-800/50 hover:bg-zinc-700 px-3 py-1.5 rounded-full transition border border-zinc-700">
               <input 
                 type="checkbox" 
@@ -499,6 +501,9 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
   const [isFull, setIsFull] = useState(false);
   
   const [channelId, setChannelId] = useState('');
+  // STATE MỚI cho Playlist
+  const [playlistInput, setPlaylistInput] = useState(''); 
+  
   const [apiKey, setApiKey] = useState('');
   const [maxVideos, setMaxVideos] = useState(50);
   
@@ -627,6 +632,78 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
     }
   };
 
+  // HÀM MỚI: Tải từ Playlist
+  const handleSubmitPlaylist = async (e) => {
+    e.preventDefault();
+    setError('');
+    
+    const extractedPlaylistId = extractPlaylistId(playlistInput);
+    if (!extractedPlaylistId || !apiKey) {
+      setError("Vui lòng nhập Link hoặc ID Playlist và API Key.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      let allVideos = [];
+      let nextPageToken = '';
+      let fetchedCount = 0;
+      const limit = Math.min(Math.max(parseInt(maxVideos) || 50, 1), 500);
+
+      while (fetchedCount < limit) {
+        const fetchCount = Math.min(50, limit - fetchedCount);
+        let fetchUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${extractedPlaylistId}&maxResults=${fetchCount}&key=${apiKey}`;
+        
+        if (nextPageToken) {
+          fetchUrl += `&pageToken=${nextPageToken}`;
+        }
+
+        const res = await fetch(fetchUrl);
+        const data = await res.json();
+
+        if (data.error) throw new Error(data.error.message);
+        if (!data.items || data.items.length === 0) break;
+
+        const newMovies = data.items
+          .filter(item => item.snippet.resourceId && item.snippet.resourceId.videoId)
+          .filter(item => {
+             const vidId = item.snippet.resourceId.videoId;
+             const isDupDb = existingMovies.some(m => m.videoId === vidId || m.title.toLowerCase().trim() === item.snippet.title.toLowerCase().trim());
+             const isDupLocal = allVideos.some(m => m.videoId === vidId || m.title.toLowerCase().trim() === item.snippet.title.toLowerCase().trim());
+             return !isDupDb && !isDupLocal;
+          })
+          .map(item => {
+             const isVideoFull = detectIsFull(item.snippet.title, item.snippet.description);
+             return {
+              id: item.snippet.resourceId.videoId + '_' + Date.now() + Math.random(),
+              videoId: item.snippet.resourceId.videoId,
+              title: item.snippet.title,
+              description: item.snippet.description,
+              category: category,
+              isFull: isVideoFull
+             };
+          });
+
+        allVideos = [...allVideos, ...newMovies];
+        fetchedCount += data.items.length;
+        nextPageToken = data.nextPageToken;
+
+        if (!nextPageToken) break;
+      }
+
+      if (allVideos.length === 0) {
+        throw new Error("Không tìm thấy video mới nào (hoặc playlist trống/chế độ riêng tư).");
+      }
+
+      onAddMovies(allVideos);
+      onClose();
+    } catch (err) {
+      setError("Lỗi khi tải Playlist: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 md:p-4">
       <div className="bg-zinc-900 w-full max-w-md rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10 flex flex-col max-h-[90vh]">
@@ -635,25 +712,32 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
           <button onClick={onClose} className="text-zinc-400 hover:text-white transition"><X size={20} className="md:w-6 md:h-6" /></button>
         </div>
         
+        {/* TABS MENU CẬP NHẬT 3 TÙY CHỌN */}
         <div className="flex border-b border-zinc-800 shrink-0">
           <button
-            className={`flex-1 py-2 md:py-3 text-xs md:text-sm font-semibold transition ${activeTab === 'single' ? 'text-white border-b-2 border-red-600 bg-zinc-800/50' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/30'}`}
+            className={`flex-1 py-2 md:py-3 text-[11px] md:text-sm font-semibold transition ${activeTab === 'single' ? 'text-white border-b-2 border-red-600 bg-zinc-800/50' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/30'}`}
             onClick={() => { setActiveTab('single'); setError(''); }}
           >
             Một Video
           </button>
           <button
-            className={`flex-1 py-2 md:py-3 text-xs md:text-sm font-semibold transition ${activeTab === 'channel' ? 'text-white border-b-2 border-red-600 bg-zinc-800/50' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/30'}`}
+            className={`flex-1 py-2 md:py-3 text-[11px] md:text-sm font-semibold transition ${activeTab === 'channel' ? 'text-white border-b-2 border-red-600 bg-zinc-800/50' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/30'}`}
             onClick={() => { setActiveTab('channel'); setError(''); }}
           >
             Cả Kênh
+          </button>
+          <button
+            className={`flex-1 py-2 md:py-3 text-[11px] md:text-sm font-semibold transition ${activeTab === 'playlist' ? 'text-white border-b-2 border-red-600 bg-zinc-800/50' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/30'}`}
+            onClick={() => { setActiveTab('playlist'); setError(''); }}
+          >
+            Playlist
           </button>
         </div>
 
         <div className="p-4 md:p-6 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
           {error && <div className="mb-4 p-2 md:p-3 bg-red-500/20 border border-red-500 text-red-500 rounded text-xs md:text-sm">{error}</div>}
           
-          {activeTab === 'single' ? (
+          {activeTab === 'single' && (
             <form onSubmit={handleSubmitSingle} className="flex flex-col gap-3 md:gap-4">
               <div>
                 <label className="block text-xs md:text-sm font-medium text-zinc-400 mb-1">Link YouTube</label>
@@ -707,7 +791,9 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
                 Thêm Video
               </button>
             </form>
-          ) : (
+          )}
+
+          {activeTab === 'channel' && (
              <form onSubmit={handleSubmitChannel} className="flex flex-col gap-3 md:gap-4">
               <div className="text-[10px] md:text-xs text-blue-400 bg-blue-400/10 p-2 md:p-3 rounded border border-blue-400/20">
                 Tính năng này tự động phân tích tiêu đề để gắn nhãn "Đã Full" khi tải video về.
@@ -758,6 +844,60 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
               </button>
             </form>
           )}
+
+          {/* FORM MỚI DÀNH CHO PLAYLIST */}
+          {activeTab === 'playlist' && (
+             <form onSubmit={handleSubmitPlaylist} className="flex flex-col gap-3 md:gap-4">
+              <div className="text-[10px] md:text-xs text-blue-400 bg-blue-400/10 p-2 md:p-3 rounded border border-blue-400/20">
+                Bạn có thể dán toàn bộ đường link của Playlist hoặc chỉ copy phần ID (phần sau chữ list=).
+              </div>
+              <div>
+                <label className="block text-xs md:text-sm font-medium text-zinc-400 mb-1">Link hoặc ID Playlist</label>
+                <input 
+                  type="text" value={playlistInput} onChange={(e) => setPlaylistInput(e.target.value)} required
+                  placeholder="VD: https://www.youtube.com/playlist?list=PL..."
+                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-2 md:px-3 py-1.5 md:py-2 text-sm focus:border-red-600 outline-none transition"
+                />
+              </div>
+              <div>
+                <label className="block text-xs md:text-sm font-medium text-zinc-400 mb-1">YouTube API Key</label>
+                <input 
+                  type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} required
+                  placeholder="AIzaSy..."
+                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-2 md:px-3 py-1.5 md:py-2 text-sm focus:border-red-600 outline-none transition"
+                />
+              </div>
+              <div>
+                <label className="block text-xs md:text-sm font-medium text-zinc-400 mb-1">Số lượng video (Tối đa 500)</label>
+                <input 
+                  type="number" value={maxVideos} onChange={(e) => setMaxVideos(e.target.value)} required
+                  min="1" max="500"
+                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-2 md:px-3 py-1.5 md:py-2 text-sm focus:border-red-600 outline-none transition"
+                />
+              </div>
+              <div>
+                <label className="block text-xs md:text-sm font-medium text-zinc-400 mb-1">Xếp vào Thể loại</label>
+                <input 
+                  type="text" 
+                  list="category-options-playlist"
+                  value={category} 
+                  onChange={(e) => setCategory(e.target.value)}
+                  placeholder="Nhập hoặc chọn thể loại..."
+                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-2 md:px-3 py-1.5 md:py-2 text-sm focus:border-red-600 outline-none transition"
+                  required
+                />
+                <datalist id="category-options-playlist">
+                  {categories.filter(c => c !== 'Tất cả').map(cat => (
+                    <option key={cat} value={cat} />
+                  ))}
+                </datalist>
+              </div>
+              <button type="submit" disabled={loading} className="mt-2 w-full bg-red-600 hover:bg-red-700 text-white py-1.5 md:py-2 rounded font-bold text-sm transition disabled:opacity-50">
+                {loading ? 'Đang tải Playlist...' : 'Nhập Playlist'}
+              </button>
+            </form>
+          )}
+
         </div>
       </div>
     </div>
