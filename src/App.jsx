@@ -287,22 +287,26 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete }) {
 
   return (
     <div className="fixed inset-0 z-[100] bg-[#141414] overflow-y-auto">
-      <button 
-        onClick={onClose}
-        className="fixed top-4 md:top-6 left-4 md:left-6 z-[110] flex items-center gap-1 md:gap-2 text-white bg-black/50 hover:bg-black/80 px-3 md:px-4 py-1.5 md:py-2 rounded-full backdrop-blur transition text-xs md:text-base"
-      >
-        <ChevronLeft size={18} className="md:w-5 md:h-5" /> Quay lại
-      </button>
-      
+      {/* Thanh header chứa nút Quay lại nằm phía trên video */}
+      <div className="sticky top-0 z-[110] w-full bg-[#141414]/95 backdrop-blur px-4 md:px-6 py-3 md:py-4 flex items-center">
+        <button
+          onClick={onClose}
+          className="inline-flex items-center gap-1 md:gap-2 text-white bg-white/10 hover:bg-white/20 px-3 md:px-4 py-1.5 md:py-2 rounded-full transition text-xs md:text-base"
+        >
+          <ChevronLeft size={18} className="md:w-5 md:h-5" /> Quay lại
+        </button>
+      </div>
+
+      {/* Khung video nằm ngay bên dưới thanh header */}
       <div className="w-full h-[35vh] sm:h-[50vh] lg:h-[80vh] bg-black">
-  <iframe
-    src={`https://www.youtube-nocookie.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_lang_pref=none&hl=en`}
-    title={movie.title}
-    className="w-full h-full border-0"
-    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-    allowFullScreen
-  ></iframe>
-</div>
+        <iframe
+          src={`https://www.youtube-nocookie.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_lang_pref=none&hl=vm`}
+          title={movie.title}
+          className="w-full h-full border-0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+        ></iframe>
+      </div>
 
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-12 flex flex-col gap-8 md:gap-12">
         <div>
