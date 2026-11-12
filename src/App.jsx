@@ -100,6 +100,7 @@ function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel }) {
   );
 }
 
+// SỬA: Thêm pointer-events-none cho lớp nền Navbar và pointer-events-auto cho các nút bấm bên trong
 function Navbar({ categories, currentCategory, setCategory, searchQuery, setSearchQuery, onOpenAdd, showOnlyFull, setShowOnlyFull, onNavigate }) {
   const handleNavClick = (cat) => {
     setCategory(cat);
@@ -108,8 +109,8 @@ function Navbar({ categories, currentCategory, setCategory, searchQuery, setSear
   };
 
   return (
-    <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/90 to-transparent pb-3 md:pb-4 pt-3 md:pt-4 px-4 md:px-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-4 transition-all duration-300">
-      <div className="flex items-center gap-4 md:gap-8 w-full md:w-auto overflow-hidden">
+    <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/90 via-black/50 to-transparent pb-6 pt-3 md:pt-4 px-4 md:px-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-4 transition-all duration-300 pointer-events-none">
+      <div className="flex items-center gap-4 md:gap-8 w-full md:w-auto overflow-hidden pointer-events-auto">
         <h1 className="text-red-600 font-black text-2xl md:text-3xl tracking-tighter cursor-pointer shrink-0" onClick={() => handleNavClick('Tất cả')}>
           YOUFLIX
         </h1>
@@ -126,7 +127,7 @@ function Navbar({ categories, currentCategory, setCategory, searchQuery, setSear
         </div>
       </div>
       
-      <div className="flex flex-wrap md:flex-nowrap items-center gap-3 md:gap-4 w-full md:w-auto">
+      <div className="flex flex-wrap md:flex-nowrap items-center gap-3 md:gap-4 w-full md:w-auto pointer-events-auto">
         <label className="flex items-center gap-1.5 md:gap-2 cursor-pointer text-xs md:text-sm font-medium text-zinc-300 hover:text-white transition bg-black/40 px-2 md:px-3 py-1 md:py-1.5 rounded-full border border-zinc-700">
           <input 
             type="checkbox" 
@@ -299,7 +300,6 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
     }
   };
 
-  // Quản lý thanh cuộn của trang gốc khi ở chế độ thu nhỏ
   useEffect(() => {
     if (!isMiniPlayer) {
       document.body.style.overflow = 'hidden';
@@ -315,20 +315,21 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
       : "fixed inset-0 z-[40] bg-[#141414] overflow-y-auto transition-all duration-300 ease-in-out"}>
       
       {/* 1. Header khi ở chế độ BÌNH THƯỜNG (FULL) */}
-      {!isMiniPlayer && <div className="w-full h-16 md:h-20 shrink-0"></div>}
+      {/* SỬA: Tăng khoảng đệm để đảm bảo không dính vào Navbar, và relative z-10 để ăn click */}
+      {!isMiniPlayer && <div className="w-full h-20 md:h-24 shrink-0"></div>}
       
       {!isMiniPlayer && (
-        <div className="w-full px-4 md:px-6 py-2 flex items-center justify-between">
+        <div className="relative z-10 w-full px-4 md:px-6 py-2 flex items-center justify-between">
           <button 
             onClick={onClose}
-            className="flex items-center gap-1.5 md:gap-2 text-white bg-zinc-800 hover:bg-zinc-700 px-3 md:px-4 py-1.5 md:py-2 rounded-full transition text-xs md:text-sm font-medium border border-zinc-700 shadow-md cursor-pointer"
+            className="flex items-center gap-1.5 md:gap-2 text-white bg-zinc-800 hover:bg-zinc-700 px-3 md:px-4 py-1.5 md:py-2 rounded-full transition text-xs md:text-sm font-medium border border-zinc-700 shadow-md cursor-pointer pointer-events-auto"
           >
             <ChevronLeft size={18} className="md:w-5 md:h-5" /> Quay lại
           </button>
           
           <button 
             onClick={onToggleMiniPlayer}
-            className="flex items-center gap-1.5 text-white bg-blue-600 hover:bg-blue-700 px-3 md:px-4 py-1.5 md:py-2 rounded-full transition text-xs md:text-sm font-medium shadow-md cursor-pointer"
+            className="flex items-center gap-1.5 text-white bg-blue-600 hover:bg-blue-700 px-3 md:px-4 py-1.5 md:py-2 rounded-full transition text-xs md:text-sm font-medium shadow-md cursor-pointer pointer-events-auto"
           >
             <Minimize2 size={16} className="md:w-4 md:h-4" /> Thu nhỏ
           </button>
@@ -353,10 +354,10 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
         </div>
       )}
 
-      {/* 3. Khung Video (tự co giãn không reload) */}
+      {/* 3. Khung Video */}
       <div className={isMiniPlayer ? "w-full aspect-video bg-black" : "w-full h-[35vh] sm:h-[50vh] lg:h-[80vh] bg-black"}>
         <iframe 
-          src={`https://www.youtube.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_load_policy=0&iv_load_policy=3&cc_lang_pref=vm&modestbranding=1&playsinline=1&showinfo=0&controls=1&fs=1&disablekb=0&enablejsapi=1&origin=${window.location.origin}`}
+          src={`https://www.youtube.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_load_policy=0&hl=en&iv_load_policy=3&modestbranding=1&playsinline=1&controls=1&fs=1&disablekb=0&enablejsapi=1&origin=${window.location.origin}`}
           title={movie.title}
           className={`w-full h-full border-0 ${isMiniPlayer ? "pointer-events-none" : ""}`}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -364,7 +365,7 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
         ></iframe>
       </div>
 
-      {/* 4. Nội dung chi tiết (Chỉ hiện khi ở chế độ Full) */}
+      {/* 4. Nội dung chi tiết */}
       <div className={isMiniPlayer ? "hidden" : "max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-12 flex flex-col gap-8 md:gap-12"}>
         <div>
           <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-3 md:mb-4">
@@ -737,7 +738,6 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMovie, setSelectedMovie] = useState(null);
   
-  // Trạng thái thu nhỏ video
   const [isMiniPlayer, setIsMiniPlayer] = useState(false);
   
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -751,17 +751,13 @@ export default function App() {
     return ['Tất cả', ...Array.from(uniqueCats)];
   }, [movies]);
 
-  // Hook 1: Xử lý Xác thực (Chỉ chạy 1 lần)
   useEffect(() => {
     if (!useCloud || !auth) return;
-    
     signInAnonymously(auth).catch(error => console.error("Lỗi xác thực:", error));
-    
     const unsubscribe = onAuthStateChanged(auth, setUser);
     return () => unsubscribe();
   }, []);
 
-  // Hook 2: Fetch dữ liệu từ Firebase
   useEffect(() => {
     if (!useCloud || !db) return;
 
@@ -786,7 +782,6 @@ export default function App() {
     return () => unsubscribe();
   }, [user]);
 
-  // Hook 3: Đồng bộ LocalStorage (Nếu không dùng cloud)
   useEffect(() => {
     if (!useCloud) {
       localStorage.setItem('youflix_movies_v2', JSON.stringify(movies));
@@ -856,7 +851,6 @@ export default function App() {
     }
   };
 
-  // Hàm chọn phim mới: Đảm bảo tắt Mini Player và scroll lên top
   const handleSelectMovie = (movie) => {
     setSelectedMovie(movie);
     setIsMiniPlayer(false);
@@ -964,7 +958,6 @@ export default function App() {
         </button>
       </footer>
 
-      {/* Truyền các props quản lý Mini Player vào DetailView */}
       {selectedMovie && (
         <DetailView 
           movie={selectedMovie} 
