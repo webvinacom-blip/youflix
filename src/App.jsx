@@ -111,6 +111,7 @@ function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel }) {
   );
 }
 
+// CẬP NHẬT NAVBAR: Logo to hơn, Menu tự động xuống dòng, không bị rớt chữ
 function Navbar({ categories, currentCategory, setCategory, searchQuery, setSearchQuery, onOpenAdd, showOnlyFull, setShowOnlyFull, onNavigate }) {
   const handleNavClick = (cat) => {
     setCategory(cat);
@@ -119,53 +120,61 @@ function Navbar({ categories, currentCategory, setCategory, searchQuery, setSear
   };
 
   return (
-    <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/90 via-black/50 to-transparent pb-6 pt-3 md:pt-4 px-4 md:px-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-4 transition-all duration-300 pointer-events-none">
-      <div className="flex items-center gap-4 md:gap-8 w-full md:w-auto overflow-hidden pointer-events-auto">
-        <h1 className="text-red-600 font-black text-2xl md:text-3xl tracking-tighter cursor-pointer shrink-0" onClick={() => handleNavClick('Tất cả')}>
-          YOUFLIX
-        </h1>
-        <div className="flex gap-3 md:gap-4 overflow-x-auto no-scrollbar whitespace-nowrap scroll-smooth pb-1 md:pb-0">
-          {categories.map(cat => (
-            <button 
-              key={cat}
-              onClick={() => handleNavClick(cat)}
-              className={`text-xs md:text-sm font-medium transition shrink-0 ${currentCategory === cat ? 'text-white' : 'text-zinc-300 hover:text-white'}`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </div>
-      
-      <div className="flex flex-wrap md:flex-nowrap items-center gap-3 md:gap-4 w-full md:w-auto pointer-events-auto">
-        <label className="flex items-center gap-1.5 md:gap-2 cursor-pointer text-xs md:text-sm font-medium text-zinc-300 hover:text-white transition bg-black/40 px-2 md:px-3 py-1 md:py-1.5 rounded-full border border-zinc-700">
-          <input 
-            type="checkbox" 
-            checked={showOnlyFull} 
-            onChange={(e) => setShowOnlyFull(e.target.checked)}
-            className="w-3.5 h-3.5 md:w-4 md:h-4 accent-red-600"
-          />
-          Chỉ hiện phim đã Full
-        </label>
+    <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/95 via-black/80 to-transparent pb-8 pt-4 px-4 md:px-8 transition-all duration-300 pointer-events-none">
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 pointer-events-auto">
         
-        <div className="relative flex-1 md:w-64 min-w-[140px]">
-          <Search className="absolute left-2.5 md:left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4 md:w-[18px] md:h-[18px]" />
-          <input 
-            type="text" 
-            placeholder="Tìm kiếm phim..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-black/50 border border-zinc-700 text-white rounded-full py-1 md:py-1.5 pl-8 md:pl-10 pr-3 md:pr-4 focus:outline-none focus:border-white transition placeholder:text-zinc-500 text-xs md:text-sm"
-          />
+        {/* Nhóm Logo và Menu Kênh */}
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-8 flex-1">
+          {/* SỬA CHỮ: Kích thước logo to hơn (text-4xl md:text-5xl) */}
+          <h1 className="text-red-600 font-black text-4xl md:text-5xl tracking-tighter cursor-pointer shrink-0 drop-shadow-md" onClick={() => handleNavClick('Tất cả')}>
+            YOUFLIX
+          </h1>
+          
+          {/* SỬA CHỮ: Bỏ cuộn ngang, dùng flex-wrap để các mục tự rớt xuống dòng khi quá dài */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 lg:gap-x-6">
+            {categories.map(cat => (
+              <button 
+                key={cat}
+                onClick={() => handleNavClick(cat)}
+                className={`text-sm font-medium transition whitespace-nowrap hover:scale-105 ${currentCategory === cat ? 'text-white font-bold drop-shadow' : 'text-zinc-300 hover:text-white'}`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
         </div>
         
-        <button 
-          onClick={onOpenAdd}
-          className="flex items-center justify-center gap-1 md:gap-2 bg-red-600 hover:bg-red-700 text-white px-3 md:px-4 py-1 md:py-1.5 rounded-full font-medium text-xs md:text-sm transition shrink-0"
-        >
-          <Plus size={16} className="md:w-[18px] md:h-[18px]" />
-          <span className="hidden sm:inline">Thêm Phim</span>
-        </button>
+        {/* Nhóm Công cụ Tìm kiếm, Lọc, Thêm Phim */}
+        <div className="flex flex-wrap md:flex-nowrap items-center gap-3 md:gap-4 shrink-0 mt-2 md:mt-0">
+          <label className="flex items-center gap-1.5 md:gap-2 cursor-pointer text-xs md:text-sm font-medium text-zinc-300 hover:text-white transition bg-black/60 px-3 py-1.5 rounded-full border border-zinc-700 backdrop-blur-sm">
+            <input 
+              type="checkbox" 
+              checked={showOnlyFull} 
+              onChange={(e) => setShowOnlyFull(e.target.checked)}
+              className="w-3.5 h-3.5 md:w-4 md:h-4 accent-red-600"
+            />
+            Chỉ hiện phim đã Full
+          </label>
+          
+          <div className="relative flex-1 md:w-56 min-w-[140px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" />
+            <input 
+              type="text" 
+              placeholder="Tìm kiếm phim..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-black/60 border border-zinc-700 text-white rounded-full py-1.5 pl-9 pr-4 focus:outline-none focus:border-white focus:bg-black transition placeholder:text-zinc-500 text-sm backdrop-blur-sm"
+            />
+          </div>
+          
+          <button 
+            onClick={onOpenAdd}
+            className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded-full font-bold text-sm transition shadow-lg hover:shadow-red-600/30"
+          >
+            <Plus size={18} />
+            <span className="hidden sm:inline">Thêm Phim</span>
+          </button>
+        </div>
       </div>
     </nav>
   );
@@ -175,43 +184,43 @@ function Hero({ movie, onPlay }) {
   if (!movie) return null;
   
   return (
-    <div className="relative w-full h-[60vh] md:h-[70vh] min-h-[400px] md:min-h-[500px] mb-6 md:mb-8">
+    <div className="relative w-full h-[60vh] md:h-[80vh] min-h-[500px] mb-6 md:mb-12">
       <div className="absolute inset-0 w-full h-full">
         <img 
           src={getHighResThumbnail(movie.videoId)} 
           alt={movie.title}
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#141414]/90 md:from-black/80 via-black/40 to-transparent"></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/40 md:via-transparent to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-[#141414]/95 via-[#141414]/60 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent h-full w-full bottom-0 top-auto bg-[length:100%_150%]"></div>
       </div>
       
-      <div className="absolute bottom-[10%] md:bottom-[15%] left-4 md:left-16 max-w-2xl px-4 md:px-0">
-        <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-2 md:mb-4">
-          <span className="text-green-500 font-bold text-xs md:text-sm">98% Phù hợp</span>
-          <span className="border border-zinc-500 text-zinc-300 text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-sm">4K</span>
-          {movie.isFull && <span className="bg-red-600 text-white text-[10px] md:text-xs font-bold px-1.5 md:px-2 py-0.5 rounded-sm uppercase tracking-wider">Đã Full</span>}
-          <span className="text-zinc-300 text-xs md:text-sm">{movie.category}</span>
+      <div className="absolute bottom-[15%] md:bottom-[20%] left-4 md:left-16 max-w-2xl px-4 md:px-0">
+        <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-3 md:mb-4">
+          <span className="text-green-500 font-bold text-xs md:text-base drop-shadow-md">98% Phù hợp</span>
+          <span className="border border-zinc-400 text-zinc-200 text-[10px] md:text-xs px-2 py-0.5 rounded-sm font-medium backdrop-blur-sm bg-black/20">4K</span>
+          {movie.isFull && <span className="bg-red-600 text-white text-[10px] md:text-xs font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider shadow-md">Đã Full</span>}
+          <span className="text-zinc-200 font-medium text-xs md:text-sm drop-shadow-md">{movie.category}</span>
         </div>
-        <h2 className="text-3xl md:text-6xl font-bold text-white mb-2 md:mb-4 leading-tight shadow-sm line-clamp-2">
+        <h2 className="text-4xl md:text-7xl font-bold text-white mb-4 md:mb-6 leading-tight drop-shadow-xl line-clamp-2">
           {movie.title}
         </h2>
-        <p className="text-sm md:text-lg text-zinc-300 mb-4 md:mb-8 line-clamp-3 max-w-xl text-shadow">
+        <p className="text-sm md:text-xl text-zinc-200 mb-6 md:mb-10 line-clamp-3 max-w-xl drop-shadow-lg font-medium">
           {movie.description || "Một tuyệt tác đáng xem trên nền tảng của chúng tôi. Hãy tận hưởng những giây phút giải trí tuyệt vời."}
         </p>
         
-        <div className="flex gap-2 md:gap-4">
+        <div className="flex gap-3 md:gap-4">
           <button 
             onClick={() => onPlay(movie)}
-            className="flex items-center gap-1 md:gap-2 bg-white text-black px-4 md:px-8 py-1.5 md:py-2.5 rounded hover:bg-white/80 transition font-bold text-sm md:text-lg"
+            className="flex items-center justify-center gap-2 bg-white text-black px-6 md:px-10 py-2 md:py-3 rounded-md hover:bg-white/80 transition font-bold text-base md:text-xl shadow-lg hover:scale-105"
           >
-            <Play size={18} className="md:w-6 md:h-6" fill="currentColor" /> Phát ngay
+            <Play size={24} className="md:w-7 md:h-7" fill="currentColor" /> Phát ngay
           </button>
           <button 
             onClick={() => onPlay(movie)}
-            className="flex items-center gap-1 md:gap-2 bg-zinc-500/50 text-white px-4 md:px-8 py-1.5 md:py-2.5 rounded hover:bg-zinc-500/70 transition font-bold text-sm md:text-lg backdrop-blur-sm"
+            className="flex items-center justify-center gap-2 bg-zinc-500/50 text-white px-6 md:px-10 py-2 md:py-3 rounded-md hover:bg-zinc-500/70 transition font-bold text-base md:text-xl backdrop-blur-md shadow-lg hover:scale-105"
           >
-            <Info size={18} className="md:w-6 md:h-6" /> Chi tiết
+            <Info size={24} className="md:w-7 md:h-7" /> Chi tiết
           </button>
         </div>
       </div>
@@ -222,7 +231,7 @@ function Hero({ movie, onPlay }) {
 function MovieCard({ movie, onClick, onDelete, className = "flex-none w-[140px] sm:w-[160px] md:w-64" }) {
   return (
     <div 
-      className={`group/card relative aspect-video rounded-md overflow-hidden cursor-pointer transition-all duration-300 hover:scale-105 hover:z-20 bg-zinc-800 ${className}`}
+      className={`group/card relative aspect-video rounded-md overflow-hidden cursor-pointer transition-all duration-300 hover:scale-105 hover:z-20 bg-zinc-800 shadow-md hover:shadow-xl hover:shadow-black/50 ${className}`}
       onClick={() => onClick(movie)}
     >
       <img 
@@ -232,23 +241,23 @@ function MovieCard({ movie, onClick, onDelete, className = "flex-none w-[140px] 
         loading="lazy"
       />
       {movie.isFull && (
-        <div className="absolute top-1 left-1 md:top-2 md:left-2 bg-red-600 text-white text-[8px] md:text-[10px] font-bold px-1 md:px-1.5 py-0.5 rounded-sm shadow z-10">
+        <div className="absolute top-1 left-1 md:top-2 md:left-2 bg-red-600 text-white text-[8px] md:text-[10px] font-bold px-1.5 py-0.5 rounded-sm shadow-md z-10 tracking-wider">
           FULL
         </div>
       )}
       <button 
         onClick={(e) => { e.stopPropagation(); onDelete(movie.id); }}
-        className="absolute top-1 right-1 md:top-2 md:right-2 bg-black/60 hover:bg-red-600 text-white p-1 md:p-1.5 rounded-full opacity-0 group-hover/card:opacity-100 transition-all z-20"
+        className="absolute top-1 right-1 md:top-2 md:right-2 bg-black/60 hover:bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover/card:opacity-100 transition-all z-20 shadow-md"
         title="Xóa phim"
       >
         <Trash2 size={14} className="md:w-4 md:h-4" />
       </button>
-      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-2 md:p-4 pointer-events-none">
-        <h3 className="text-white font-bold text-xs md:text-sm line-clamp-2 mb-1">{movie.title}</h3>
-        <p className="text-zinc-400 text-[10px] md:text-xs">{movie.category}</p>
-        <div className="flex items-center gap-1 md:gap-2 mt-1 md:mt-2">
-          <button className="bg-white text-black rounded-full p-1 md:p-1.5 hover:bg-zinc-200 transition pointer-events-auto">
-            <Play size={10} className="md:w-3.5 md:h-3.5" fill="currentColor" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3 md:p-4 pointer-events-none">
+        <h3 className="text-white font-bold text-xs md:text-sm line-clamp-2 mb-1 drop-shadow-md">{movie.title}</h3>
+        <p className="text-zinc-300 font-medium text-[10px] md:text-xs drop-shadow">{movie.category}</p>
+        <div className="flex items-center gap-2 mt-2">
+          <button className="bg-white text-black rounded-full p-1.5 md:p-2 hover:bg-zinc-200 transition pointer-events-auto shadow-md">
+            <Play size={12} className="md:w-4 md:h-4" fill="currentColor" />
           </button>
         </div>
       </div>
@@ -260,13 +269,13 @@ function MovieRow({ title, movies, onMovieClick, onDeleteMovie, onDeleteCategory
   if (movies.length === 0) return null;
   
   return (
-    <div className="mb-6 md:mb-8 relative w-full overflow-hidden">
-      <div className="flex items-center justify-between px-4 md:px-8 mb-2 md:mb-4">
-        <h2 className="text-lg md:text-xl font-bold text-white">{title}</h2>
+    <div className="mb-8 md:mb-12 relative w-full overflow-hidden">
+      <div className="flex items-end justify-between px-4 md:px-12 mb-3 md:mb-5">
+        <h2 className="text-xl md:text-2xl font-bold text-white tracking-wide">{title}</h2>
         {onDeleteCategory && (
           <button 
             onClick={() => onDeleteCategory(title)}
-            className="text-xs text-red-500 hover:text-red-400 flex items-center gap-1 bg-red-500/10 hover:bg-red-500/20 px-2 py-1 rounded transition"
+            className="text-xs font-medium text-zinc-400 hover:text-red-500 flex items-center gap-1.5 transition px-2 py-1 rounded-md hover:bg-red-500/10"
             title={`Xóa toàn bộ phim trong kênh ${title}`}
           >
             <Trash2 size={14} /> Xóa kênh
@@ -275,7 +284,7 @@ function MovieRow({ title, movies, onMovieClick, onDeleteMovie, onDeleteCategory
       </div>
       
       <div 
-        className="grid grid-rows-2 grid-flow-col auto-cols-[140px] sm:auto-cols-[180px] md:auto-cols-[220px] lg:auto-cols-[280px] gap-2 md:gap-4 pb-4 px-4 md:px-8 overflow-x-auto scroll-smooth w-full snap-x snap-mandatory"
+        className="grid grid-rows-2 grid-flow-col auto-cols-[140px] sm:auto-cols-[180px] md:auto-cols-[240px] lg:auto-cols-[280px] gap-2 md:gap-4 pb-6 px-4 md:px-12 overflow-x-auto scroll-smooth w-full snap-x snap-mandatory"
         style={{ scrollbarWidth: 'thin' }}
       >
         {movies.map(movie => (
@@ -292,43 +301,38 @@ function MovieRow({ title, movies, onMovieClick, onDeleteMovie, onDeleteCategory
   );
 }
 
-// CẬP NHẬT: Gỡ Native Playlist khỏi Iframe, xử lý Auto-Next 100% bằng React
 function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniPlayer, onToggleMiniPlayer }) {
   const [autoNext, setAutoNext] = useState(true);
+  const [displayMovie, setDisplayMovie] = useState(movie);
   
+  useEffect(() => {
+    setDisplayMovie(movie); 
+  }, [movie.id]);
+
   const iframeRef = useRef(null);
   const similarRowRef = useRef(null);
 
-  // 1. TÍNH TOÁN DANH SÁCH GỐC (Chuẩn thứ tự tập)
   const fullList = useMemo(() => {
     if (movie.playlistId) {
-      // Nếu là Playlist: Sắp xếp theo đúng thứ tự tác giả đã tạo
       return allMovies
         .filter(m => m.playlistId === movie.playlistId)
         .sort((a,b) => (a.playlistIndex || 0) - (b.playlistIndex || 0));
     }
-    // Nếu là Kênh/Thể loại: Sắp xếp từ Cũ nhất (Tập 1) -> Mới nhất (Tập cuối) để Auto-next đúng trình tự xem
     return allMovies
       .filter(m => m.category === movie.category)
       .sort((a,b) => a.id.localeCompare(b.id)); 
   }, [movie, allMovies]);
 
-
-  // 2. TÌM VIDEO TIẾP THEO ĐỂ PHÁT KHI KẾT THÚC
   const nextMovieForAutoPlay = useMemo(() => {
     const currentIndex = fullList.findIndex(m => m.id === movie.id);
     if (currentIndex >= 0 && currentIndex < fullList.length - 1) {
-      return fullList[currentIndex + 1]; // Phát tập liền kề phía sau
+      return fullList[currentIndex + 1]; 
     }
-    // Nếu đang ở tập cuối cùng, quay lại tập đầu tiên của danh sách
     return fullList[0];
   }, [fullList, movie.id]);
 
-  // CHỈ DÙNG 1 VIDEO ĐƠN TRONG IFRAME, ĐỂ LUÔN PHÁT ĐÚNG VIDEO NGƯỜI DÙNG CHỌN
   const iframeSrc = `https://www.youtube.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_load_policy=0&iv_load_policy=3&cc_lang_pref=en&modestbranding=1&playsinline=1&showinfo=0&controls=1&fs=1&disablekb=0&enablejsapi=1&origin=${window.location.origin}`;
 
-
-  // 3. DANH SÁCH UI NỘI DUNG TƯƠNG TỰ BÊN DƯỚI (Loại bỏ tập đang phát)
   const similarMoviesUI = useMemo(() => {
     return fullList.filter(m => m.id !== movie.id);
   }, [fullList, movie]);
@@ -351,7 +355,6 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
     return () => { document.body.style.overflow = 'auto'; };
   }, [isMiniPlayer]);
 
-  // 4. LẮNG NGHE YOUTUBE NEXT NGẦM ĐỂ TỰ CHUYỂN BÀI
   useEffect(() => {
     const handleMessage = (e) => {
       if (!e.origin.includes('youtube.com') && !e.origin.includes('youtube-nocookie.com')) return;
@@ -362,7 +365,7 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
 
         if (isEnded && autoNext && nextMovieForAutoPlay) {
           window.scrollTo(0, 0);
-          onMovieClick(nextMovieForAutoPlay); // React tự đổi state, iframe sẽ tự reload video mới
+          onMovieClick(nextMovieForAutoPlay); 
         }
       } catch (err) {}
     };
@@ -373,47 +376,47 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
 
   return (
     <div className={isMiniPlayer 
-      ? "fixed bottom-4 right-4 md:bottom-6 md:right-6 w-72 sm:w-80 md:w-96 z-[200] bg-zinc-900 rounded-lg shadow-2xl border border-zinc-700 overflow-hidden flex flex-col transition-all duration-300 ease-in-out"
+      ? "fixed bottom-4 right-4 md:bottom-8 md:right-8 w-72 sm:w-80 md:w-[400px] z-[200] bg-zinc-900 rounded-xl shadow-2xl border border-zinc-700/50 overflow-hidden flex flex-col transition-all duration-300 ease-in-out hover:shadow-black/80"
       : "fixed inset-0 z-[40] bg-[#141414] overflow-y-auto transition-all duration-300 ease-in-out"}>
       
-      {!isMiniPlayer && <div className="w-full h-20 md:h-24 shrink-0"></div>}
+      {!isMiniPlayer && <div className="w-full h-24 md:h-32 shrink-0"></div>}
       
       {!isMiniPlayer && (
-        <div className="relative z-10 w-full px-4 md:px-6 py-2 flex items-center justify-between">
+        <div className="relative z-10 w-full px-4 md:px-8 py-4 flex items-center justify-between">
           <button 
             onClick={onClose}
-            className="flex items-center gap-1.5 md:gap-2 text-white bg-zinc-800 hover:bg-zinc-700 px-3 md:px-4 py-1.5 md:py-2 rounded-full transition text-xs md:text-sm font-medium border border-zinc-700 shadow-md cursor-pointer pointer-events-auto"
+            className="flex items-center gap-2 text-white bg-zinc-800/80 hover:bg-zinc-700 px-4 md:px-5 py-2 md:py-2.5 rounded-full transition text-sm font-semibold border border-zinc-600 shadow-lg cursor-pointer backdrop-blur-md"
           >
-            <ChevronLeft size={18} className="md:w-5 md:h-5" /> Quay lại
+            <ChevronLeft size={20} /> Quay lại
           </button>
           
           <button 
             onClick={onToggleMiniPlayer}
-            className="flex items-center gap-1.5 text-white bg-blue-600 hover:bg-blue-700 px-3 md:px-4 py-1.5 md:py-2 rounded-full transition text-xs md:text-sm font-medium shadow-md cursor-pointer pointer-events-auto"
+            className="flex items-center gap-2 text-white bg-blue-600/90 hover:bg-blue-600 px-4 md:px-5 py-2 md:py-2.5 rounded-full transition text-sm font-semibold shadow-lg shadow-blue-900/30 cursor-pointer backdrop-blur-md"
           >
-            <Minimize2 size={16} className="md:w-4 md:h-4" /> Thu nhỏ
+            <Minimize2 size={18} /> Thu nhỏ
           </button>
         </div>
       )}
 
       {isMiniPlayer && (
         <div 
-          className="flex items-center justify-between px-3 py-2 bg-zinc-800/90 backdrop-blur cursor-pointer hover:bg-zinc-700 transition" 
+          className="flex items-center justify-between px-4 py-2.5 bg-zinc-800/95 backdrop-blur cursor-pointer hover:bg-zinc-700 transition" 
           onClick={onToggleMiniPlayer} 
           title="Phóng to"
         >
-          <div className="flex items-center gap-2 overflow-hidden w-full pr-2">
-            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0"></div>
-            <h3 className="text-xs font-bold text-white truncate">{movie.title}</h3>
+          <div className="flex items-center gap-3 overflow-hidden w-full pr-3">
+            <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shrink-0 shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
+            <h3 className="text-xs font-bold text-white truncate drop-shadow-sm">{movie.title}</h3>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button onClick={(e) => { e.stopPropagation(); onToggleMiniPlayer(); }} className="text-zinc-300 hover:text-white p-1"><Maximize2 size={14} /></button>
-            <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-zinc-300 hover:text-red-500 p-1"><X size={16} /></button>
+          <div className="flex items-center gap-1 shrink-0">
+            <button onClick={(e) => { e.stopPropagation(); onToggleMiniPlayer(); }} className="text-zinc-400 hover:text-white p-1.5 rounded-md hover:bg-white/10 transition"><Maximize2 size={16} /></button>
+            <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-zinc-400 hover:text-red-500 p-1.5 rounded-md hover:bg-red-500/10 transition"><X size={18} /></button>
           </div>
         </div>
       )}
 
-      <div className={isMiniPlayer ? "w-full aspect-video bg-black" : "w-full h-[35vh] sm:h-[50vh] lg:h-[80vh] bg-black"}>
+      <div className={isMiniPlayer ? "w-full aspect-video bg-black" : "w-full h-[35vh] sm:h-[50vh] lg:h-[75vh] bg-black shadow-2xl"}>
         <iframe 
           ref={iframeRef}
           onLoad={(e) => {
@@ -429,67 +432,71 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
         ></iframe>
       </div>
 
-      <div className={isMiniPlayer ? "hidden" : "max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-12 flex flex-col gap-8 md:gap-12"}>
-        <div>
-          <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-3 md:mb-4">
-            <span className="text-green-500 font-bold text-sm md:text-lg">Độ phân giải cao</span>
-            <span className="border border-zinc-500 text-zinc-300 text-xs md:text-sm px-1.5 md:px-2 py-0.5 rounded-sm">4K</span>
-            {movie.isFull && (
-              <span className="bg-red-600 text-white font-bold text-xs md:text-sm px-1.5 md:px-2 py-0.5 rounded-sm uppercase flex items-center gap-1">
-                <CheckCircle size={14}/> Đã Full
-              </span>
-            )}
-            <span className="bg-zinc-800 text-white text-xs md:text-sm px-2 md:px-3 py-1 rounded-full">{movie.category}</span>
-            
-            <label className="flex items-center gap-2 ml-auto text-xs md:text-sm text-zinc-300 cursor-pointer bg-zinc-800/50 hover:bg-zinc-700 px-3 py-1.5 rounded-full transition border border-zinc-700">
+      <div className={isMiniPlayer ? "hidden" : "max-w-[1400px] mx-auto px-4 md:px-12 py-8 md:py-16 flex flex-col gap-10 md:gap-16"}>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12">
+          <div className="lg:col-span-2">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-white mb-4 md:mb-6 leading-tight tracking-tight drop-shadow-md">{movie.title}</h1>
+            <div className="flex flex-wrap items-center gap-3 mb-6">
+              <span className="text-green-500 font-bold text-base drop-shadow-sm">Độ phân giải cao</span>
+              <span className="border border-zinc-600 text-zinc-300 text-xs px-2 py-0.5 rounded font-medium">4K</span>
+              {movie.isFull && (
+                <span className="bg-red-600 text-white font-bold text-xs px-2 py-0.5 rounded shadow-sm tracking-wide">
+                  ĐÃ FULL
+                </span>
+              )}
+            </div>
+            <p className="text-base md:text-lg text-zinc-300 leading-relaxed drop-shadow-sm font-medium">
+              {movie.description || "Chưa có thông tin mô tả chi tiết cho video này."}
+            </p>
+          </div>
+          
+          <div className="flex flex-col items-start lg:items-end justify-start gap-4 pt-2">
+            <span className="bg-zinc-800 text-white text-sm font-semibold px-4 py-1.5 rounded-full shadow-md border border-zinc-700">{movie.category}</span>
+            <label className="flex items-center gap-2.5 text-sm font-medium text-white cursor-pointer bg-zinc-800/80 hover:bg-zinc-700 px-4 py-2 rounded-lg transition border border-zinc-600 shadow-md">
               <input 
                 type="checkbox" 
                 checked={autoNext} 
                 onChange={(e) => setAutoNext(e.target.checked)}
-                className="w-3.5 h-3.5 accent-red-600 cursor-pointer"
+                className="w-4 h-4 accent-red-600 cursor-pointer rounded"
               />
               Tự động phát tập tiếp theo
             </label>
-          </div>
-          <h1 className="text-2xl md:text-5xl font-bold text-white mb-3 md:mb-6">{movie.title}</h1>
-          <p className="text-sm md:text-lg text-zinc-300 leading-relaxed mb-6 md:mb-8">
-            {movie.description || "Chưa có thông tin mô tả chi tiết cho video này."}
-          </p>
-          <div className="flex flex-wrap gap-4 items-center">
-            <a 
-              href={`https://www.youtube.com/watch?v=${movie.videoId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 md:gap-2 text-zinc-400 hover:text-white transition text-sm md:text-base"
-            >
-              Mở trên YouTube
-            </a>
-            <button 
-              onClick={() => onDelete(movie.id)}
-              className="inline-flex items-center gap-1.5 md:gap-2 text-red-500 hover:text-red-400 transition text-sm md:text-base"
-            >
-              <Trash2 size={16} className="md:w-[18px] md:h-[18px]" /> Xóa phim này
-            </button>
+            <div className="flex flex-wrap items-center gap-3 mt-4">
+              <a 
+                href={`https://www.youtube.com/watch?v=${movie.videoId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-zinc-300 hover:text-white bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-md transition text-sm font-medium"
+              >
+                Mở YouTube
+              </a>
+              <button 
+                onClick={() => onDelete(movie.id)}
+                className="inline-flex items-center gap-2 text-red-500 hover:text-white bg-red-500/10 hover:bg-red-600 px-4 py-2 rounded-md transition text-sm font-medium"
+              >
+                <Trash2 size={16} /> Xóa phim
+              </button>
+            </div>
           </div>
         </div>
         
         <div className="w-full relative group">
-          <h3 className="text-lg md:text-xl font-bold text-white mb-4 md:mb-6">
+          <h3 className="text-xl md:text-2xl font-bold text-white mb-6 tracking-wide">
             {movie.playlistId ? 'Danh sách phát (Playlist)' : 'Nội dung tương tự'}
           </h3>
-          <div className="relative w-full overflow-hidden">
+          <div className="relative w-full overflow-hidden rounded-lg">
             {similarMoviesUI.length > 0 && (
               <button 
                 onClick={() => handleScroll('left')}
-                className="absolute left-0 top-0 bottom-4 w-8 md:w-12 bg-black/50 hover:bg-black/80 text-white z-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex rounded-r-md"
+                className="absolute left-0 top-0 bottom-4 w-10 md:w-16 bg-black/60 hover:bg-black/90 text-white z-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex backdrop-blur-sm"
               >
-                <ChevronLeft size={24} className="md:w-8 md:h-8" />
+                <ChevronLeft size={32} />
               </button>
             )}
             
             <div 
               ref={similarRowRef}
-              className="flex gap-2 md:gap-4 overflow-x-auto pb-4 no-scrollbar scroll-smooth snap-x snap-mandatory"
+              className="flex gap-3 md:gap-5 overflow-x-auto pb-6 no-scrollbar scroll-smooth snap-x snap-mandatory"
             >
               {similarMoviesUI.length > 0 ? (
                 similarMoviesUI.map(m => (
@@ -498,20 +505,20 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
                     movie={m} 
                     onClick={(movie) => { window.scrollTo(0,0); onMovieClick(movie); }} 
                     onDelete={onDelete}
-                    className="flex-none w-[140px] sm:w-[160px] md:w-64 snap-start"
+                    className="flex-none w-[160px] sm:w-[200px] md:w-72 snap-start"
                   />
                 ))
               ) : (
-                <p className="text-zinc-500 text-sm">Không có phim cùng thể loại.</p>
+                <p className="text-zinc-500 font-medium py-8">Không có phim cùng thể loại.</p>
               )}
             </div>
 
             {similarMoviesUI.length > 0 && (
               <button 
                 onClick={() => handleScroll('right')}
-                className="absolute right-0 top-0 bottom-4 w-8 md:w-12 bg-black/50 hover:bg-black/80 text-white z-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex rounded-l-md"
+                className="absolute right-0 top-0 bottom-4 w-10 md:w-16 bg-black/60 hover:bg-black/90 text-white z-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex backdrop-blur-sm"
               >
-                <ChevronRight size={24} className="md:w-8 md:h-8" />
+                <ChevronRight size={32} />
               </button>
             )}
           </div>
@@ -697,63 +704,63 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 md:p-4">
-      <div className="bg-zinc-900 w-full max-w-md rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10 flex flex-col max-h-[90vh]">
-        <div className="flex justify-between items-center p-4 md:p-5 border-b border-zinc-800 shrink-0">
-          <h2 className="text-lg md:text-xl font-bold text-white">Thêm Nội Dung</h2>
-          <button onClick={onClose} className="text-zinc-400 hover:text-white transition"><X size={20} className="md:w-6 md:h-6" /></button>
+    <div className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-zinc-900 w-full max-w-lg rounded-2xl overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.5)] border border-zinc-800 flex flex-col max-h-[90vh]">
+        <div className="flex justify-between items-center p-5 md:p-6 border-b border-zinc-800 bg-zinc-900/50">
+          <h2 className="text-xl md:text-2xl font-black text-white tracking-wide">Thêm Nội Dung</h2>
+          <button onClick={onClose} className="text-zinc-400 hover:text-white bg-zinc-800 hover:bg-red-600 p-1.5 rounded-full transition"><X size={20} /></button>
         </div>
         
-        <div className="flex border-b border-zinc-800 shrink-0">
+        <div className="flex border-b border-zinc-800 bg-zinc-950/50">
           <button
-            className={`flex-1 py-2 md:py-3 text-[11px] md:text-sm font-semibold transition ${activeTab === 'single' ? 'text-white border-b-2 border-red-600 bg-zinc-800/50' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/30'}`}
+            className={`flex-1 py-3 text-xs md:text-sm font-bold transition uppercase tracking-wider ${activeTab === 'single' ? 'text-white border-b-2 border-red-600 bg-zinc-800/80' : 'text-zinc-500 hover:text-white hover:bg-zinc-800/30'}`}
             onClick={() => { setActiveTab('single'); setError(''); }}
           >
             Một Video
           </button>
           <button
-            className={`flex-1 py-2 md:py-3 text-[11px] md:text-sm font-semibold transition ${activeTab === 'channel' ? 'text-white border-b-2 border-red-600 bg-zinc-800/50' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/30'}`}
+            className={`flex-1 py-3 text-xs md:text-sm font-bold transition uppercase tracking-wider ${activeTab === 'channel' ? 'text-white border-b-2 border-red-600 bg-zinc-800/80' : 'text-zinc-500 hover:text-white hover:bg-zinc-800/30'}`}
             onClick={() => { setActiveTab('channel'); setError(''); }}
           >
             Cả Kênh
           </button>
           <button
-            className={`flex-1 py-2 md:py-3 text-[11px] md:text-sm font-semibold transition ${activeTab === 'playlist' ? 'text-white border-b-2 border-red-600 bg-zinc-800/50' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/30'}`}
+            className={`flex-1 py-3 text-xs md:text-sm font-bold transition uppercase tracking-wider ${activeTab === 'playlist' ? 'text-white border-b-2 border-red-600 bg-zinc-800/80' : 'text-zinc-500 hover:text-white hover:bg-zinc-800/30'}`}
             onClick={() => { setActiveTab('playlist'); setError(''); }}
           >
             Playlist
           </button>
         </div>
 
-        <div className="p-4 md:p-6 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
-          {error && <div className="mb-4 p-2 md:p-3 bg-red-500/20 border border-red-500 text-red-500 rounded text-xs md:text-sm">{error}</div>}
+        <div className="p-5 md:p-8 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+          {error && <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 text-red-500 rounded-lg text-sm font-medium">{error}</div>}
           
           {activeTab === 'single' && (
-            <form onSubmit={handleSubmitSingle} className="flex flex-col gap-3 md:gap-4">
+            <form onSubmit={handleSubmitSingle} className="flex flex-col gap-4 md:gap-5">
               <div>
-                <label className="block text-xs md:text-sm font-medium text-zinc-400 mb-1">Link YouTube</label>
+                <label className="block text-sm font-semibold text-zinc-300 mb-1.5">Link YouTube</label>
                 <input 
                   type="text" value={url} onChange={handleUrlChange} required
                   placeholder="https://www.youtube.com/watch?v=..."
-                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-2 md:px-3 py-1.5 md:py-2 text-sm focus:border-red-600 outline-none transition"
+                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded-lg px-4 py-2.5 text-sm focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none transition"
                 />
               </div>
               <div>
-                <label className="block text-xs md:text-sm font-medium text-zinc-400 mb-1">Tiêu đề (Tự động tải)</label>
+                <label className="block text-sm font-semibold text-zinc-300 mb-1.5">Tiêu đề (Tự động tải)</label>
                 <input 
                   type="text" value={title} onChange={(e) => setTitle(e.target.value)} required
-                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-2 md:px-3 py-1.5 md:py-2 text-sm focus:border-red-600 outline-none transition"
+                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded-lg px-4 py-2.5 text-sm focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none transition"
                 />
               </div>
               <div>
-                <label className="block text-xs md:text-sm font-medium text-zinc-400 mb-1">Thể loại</label>
+                <label className="block text-sm font-semibold text-zinc-300 mb-1.5">Thể loại</label>
                 <input 
                   type="text" 
                   list="category-options"
                   value={category} 
                   onChange={(e) => setCategory(e.target.value)}
                   placeholder="Nhập hoặc chọn thể loại..."
-                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-2 md:px-3 py-1.5 md:py-2 text-sm focus:border-red-600 outline-none transition"
+                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded-lg px-4 py-2.5 text-sm focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none transition"
                   required
                 />
                 <datalist id="category-options">
@@ -763,127 +770,131 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
                 </datalist>
               </div>
               <div>
-                <label className="block text-xs md:text-sm font-medium text-zinc-400 mb-1">Mô tả (Tùy chọn)</label>
+                <label className="block text-sm font-semibold text-zinc-300 mb-1.5">Mô tả (Tùy chọn)</label>
                 <textarea 
                   value={description} onChange={(e) => setDescription(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-2 md:px-3 py-1.5 md:py-2 text-sm focus:border-red-600 outline-none transition h-16 md:h-20 resize-none"
+                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded-lg px-4 py-2.5 text-sm focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none transition h-20 md:h-24 resize-none"
                 />
               </div>
-              <label className="flex items-center gap-2 text-xs md:text-sm text-zinc-300 cursor-pointer">
+              <label className="flex items-center gap-3 text-sm font-medium text-zinc-200 cursor-pointer bg-zinc-800/50 p-3 rounded-lg border border-zinc-700 hover:bg-zinc-800 transition">
                 <input 
                   type="checkbox" 
                   checked={isFull} 
                   onChange={(e) => setIsFull(e.target.checked)}
-                  className="w-3.5 h-3.5 md:w-4 md:h-4 accent-red-600"
+                  className="w-4 h-4 accent-red-600 rounded"
                 />
                 Đánh dấu phim này là Trọn bộ (Đã Full)
               </label>
-              <button type="submit" className="mt-2 w-full bg-red-600 hover:bg-red-700 text-white py-1.5 md:py-2 rounded font-bold text-sm transition">
+              <button type="submit" className="mt-4 w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-bold text-base transition shadow-lg hover:shadow-red-600/30">
                 Thêm Video
               </button>
             </form>
           )}
 
           {activeTab === 'channel' && (
-             <form onSubmit={handleSubmitChannel} className="flex flex-col gap-3 md:gap-4">
-              <div className="text-[10px] md:text-xs text-blue-400 bg-blue-400/10 p-2 md:p-3 rounded border border-blue-400/20">
-                Tính năng này tự động phân tích tiêu đề để gắn nhãn "Đã Full" khi tải video về.
+             <form onSubmit={handleSubmitChannel} className="flex flex-col gap-4 md:gap-5">
+              <div className="text-xs font-medium text-blue-300 bg-blue-500/10 p-3.5 rounded-lg border border-blue-500/20 leading-relaxed">
+                Tính năng này sẽ quét các video mới nhất từ Kênh và tự động phân tích tiêu đề để gắn nhãn "Đã Full".
               </div>
               <div>
-                <label className="block text-xs md:text-sm font-medium text-zinc-400 mb-1">Channel ID</label>
+                <label className="block text-sm font-semibold text-zinc-300 mb-1.5">Channel ID</label>
                 <input 
                   type="text" value={channelId} onChange={(e) => setChannelId(e.target.value)} required
                   placeholder="VD: UC_x5XG1OV2P6uZZ5FSM9Ttw"
-                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-2 md:px-3 py-1.5 md:py-2 text-sm focus:border-red-600 outline-none transition"
+                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded-lg px-4 py-2.5 text-sm focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none transition"
                 />
               </div>
               <div>
-                <label className="block text-xs md:text-sm font-medium text-zinc-400 mb-1">YouTube API Key</label>
+                <label className="block text-sm font-semibold text-zinc-300 mb-1.5">YouTube API Key</label>
                 <input 
                   type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} required
-                  placeholder="AIzaSy..."
-                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-2 md:px-3 py-1.5 md:py-2 text-sm focus:border-red-600 outline-none transition"
+                  placeholder="Nhập API Key của bạn..."
+                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded-lg px-4 py-2.5 text-sm focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none transition"
                 />
               </div>
-              <div>
-                <label className="block text-xs md:text-sm font-medium text-zinc-400 mb-1">Số lượng video (Tối đa 500)</label>
-                <input 
-                  type="number" value={maxVideos} onChange={(e) => setMaxVideos(e.target.value)} required
-                  min="1" max="500"
-                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-2 md:px-3 py-1.5 md:py-2 text-sm focus:border-red-600 outline-none transition"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-sm font-semibold text-zinc-300 mb-1.5">Xếp vào Thể loại</label>
+                  <input 
+                    type="text" 
+                    list="category-options-channel"
+                    value={category} 
+                    onChange={(e) => setCategory(e.target.value)}
+                    placeholder="Nhập thể loại..."
+                    className="w-full bg-zinc-950 border border-zinc-700 text-white rounded-lg px-4 py-2.5 text-sm focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none transition"
+                    required
+                  />
+                  <datalist id="category-options-channel">
+                    {categories.filter(c => c !== 'Tất cả').map(cat => (
+                      <option key={cat} value={cat} />
+                    ))}
+                  </datalist>
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-semibold text-zinc-300 mb-1.5">Số lượng tối đa</label>
+                  <input 
+                    type="number" value={maxVideos} onChange={(e) => setMaxVideos(e.target.value)} required
+                    min="1" max="500"
+                    className="w-full bg-zinc-950 border border-zinc-700 text-white rounded-lg px-4 py-2.5 text-sm focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none transition"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-xs md:text-sm font-medium text-zinc-400 mb-1">Xếp vào Thể loại</label>
-                <input 
-                  type="text" 
-                  list="category-options-channel"
-                  value={category} 
-                  onChange={(e) => setCategory(e.target.value)}
-                  placeholder="Nhập hoặc chọn thể loại..."
-                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-2 md:px-3 py-1.5 md:py-2 text-sm focus:border-red-600 outline-none transition"
-                  required
-                />
-                <datalist id="category-options-channel">
-                  {categories.filter(c => c !== 'Tất cả').map(cat => (
-                    <option key={cat} value={cat} />
-                  ))}
-                </datalist>
-              </div>
-              <button type="submit" disabled={loading} className="mt-2 w-full bg-red-600 hover:bg-red-700 text-white py-1.5 md:py-2 rounded font-bold text-sm transition disabled:opacity-50">
-                {loading ? 'Đang tải...' : 'Nhập Kênh'}
+              <button type="submit" disabled={loading} className="mt-4 w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-bold text-base transition shadow-lg hover:shadow-red-600/30 disabled:opacity-50 disabled:cursor-not-allowed">
+                {loading ? 'Đang phân tích dữ liệu...' : 'Nhập Kênh'}
               </button>
             </form>
           )}
 
           {activeTab === 'playlist' && (
-             <form onSubmit={handleSubmitPlaylist} className="flex flex-col gap-3 md:gap-4">
-              <div className="text-[10px] md:text-xs text-blue-400 bg-blue-400/10 p-2 md:p-3 rounded border border-blue-400/20">
-                Bạn có thể dán toàn bộ đường link của Playlist hoặc chỉ copy phần ID (phần sau chữ list=).
+             <form onSubmit={handleSubmitPlaylist} className="flex flex-col gap-4 md:gap-5">
+              <div className="text-xs font-medium text-purple-300 bg-purple-500/10 p-3.5 rounded-lg border border-purple-500/20 leading-relaxed">
+                Hệ thống sẽ giữ đúng thứ tự các tập. Dán link playlist hoặc chỉ nhập ID.
               </div>
               <div>
-                <label className="block text-xs md:text-sm font-medium text-zinc-400 mb-1">Link hoặc ID Playlist</label>
+                <label className="block text-sm font-semibold text-zinc-300 mb-1.5">Link hoặc ID Playlist</label>
                 <input 
                   type="text" value={playlistInput} onChange={(e) => setPlaylistInput(e.target.value)} required
-                  placeholder="VD: https://www.youtube.com/playlist?list=PL..."
-                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-2 md:px-3 py-1.5 md:py-2 text-sm focus:border-red-600 outline-none transition"
+                  placeholder="https://www.youtube.com/playlist?list=PL..."
+                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded-lg px-4 py-2.5 text-sm focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none transition"
                 />
               </div>
               <div>
-                <label className="block text-xs md:text-sm font-medium text-zinc-400 mb-1">YouTube API Key</label>
+                <label className="block text-sm font-semibold text-zinc-300 mb-1.5">YouTube API Key</label>
                 <input 
                   type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} required
-                  placeholder="AIzaSy..."
-                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-2 md:px-3 py-1.5 md:py-2 text-sm focus:border-red-600 outline-none transition"
+                  placeholder="Nhập API Key của bạn..."
+                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded-lg px-4 py-2.5 text-sm focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none transition"
                 />
               </div>
-              <div>
-                <label className="block text-xs md:text-sm font-medium text-zinc-400 mb-1">Số lượng video (Tối đa 500)</label>
-                <input 
-                  type="number" value={maxVideos} onChange={(e) => setMaxVideos(e.target.value)} required
-                  min="1" max="500"
-                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-2 md:px-3 py-1.5 md:py-2 text-sm focus:border-red-600 outline-none transition"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-sm font-semibold text-zinc-300 mb-1.5">Xếp vào Thể loại</label>
+                  <input 
+                    type="text" 
+                    list="category-options-playlist"
+                    value={category} 
+                    onChange={(e) => setCategory(e.target.value)}
+                    placeholder="Nhập thể loại..."
+                    className="w-full bg-zinc-950 border border-zinc-700 text-white rounded-lg px-4 py-2.5 text-sm focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none transition"
+                    required
+                  />
+                  <datalist id="category-options-playlist">
+                    {categories.filter(c => c !== 'Tất cả').map(cat => (
+                      <option key={cat} value={cat} />
+                    ))}
+                  </datalist>
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-semibold text-zinc-300 mb-1.5">Số lượng tối đa</label>
+                  <input 
+                    type="number" value={maxVideos} onChange={(e) => setMaxVideos(e.target.value)} required
+                    min="1" max="500"
+                    className="w-full bg-zinc-950 border border-zinc-700 text-white rounded-lg px-4 py-2.5 text-sm focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none transition"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-xs md:text-sm font-medium text-zinc-400 mb-1">Xếp vào Thể loại</label>
-                <input 
-                  type="text" 
-                  list="category-options-playlist"
-                  value={category} 
-                  onChange={(e) => setCategory(e.target.value)}
-                  placeholder="Nhập hoặc chọn thể loại..."
-                  className="w-full bg-zinc-950 border border-zinc-700 text-white rounded px-2 md:px-3 py-1.5 md:py-2 text-sm focus:border-red-600 outline-none transition"
-                  required
-                />
-                <datalist id="category-options-playlist">
-                  {categories.filter(c => c !== 'Tất cả').map(cat => (
-                    <option key={cat} value={cat} />
-                  ))}
-                </datalist>
-              </div>
-              <button type="submit" disabled={loading} className="mt-2 w-full bg-red-600 hover:bg-red-700 text-white py-1.5 md:py-2 rounded font-bold text-sm transition disabled:opacity-50">
-                {loading ? 'Đang tải Playlist...' : 'Nhập Playlist'}
+              <button type="submit" disabled={loading} className="mt-4 w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-bold text-base transition shadow-lg hover:shadow-red-600/30 disabled:opacity-50 disabled:cursor-not-allowed">
+                {loading ? 'Đang đồng bộ Playlist...' : 'Nhập Playlist'}
               </button>
             </form>
           )}
@@ -1056,7 +1067,7 @@ export default function App() {
       <main className="pb-20">
         {!searchQuery && currentCategory === 'Tất cả' && <Hero movie={heroMovie} onPlay={handleSelectMovie} />}
         
-        <div className={`relative w-full z-10 ${!searchQuery && currentCategory === 'Tất cả' ? '-mt-16 md:-mt-32' : 'pt-24 md:pt-28'}`}>
+        <div className={`relative w-full z-10 ${!searchQuery && currentCategory === 'Tất cả' ? '-mt-24 md:-mt-32' : 'pt-32 md:pt-40'}`}>
           {currentCategory === 'Tất cả' && !searchQuery ? (
             dynamicCategories.filter(c => c !== 'Tất cả').map(cat => {
               const catMovies = filteredMovies.filter(m => m.category === cat);
@@ -1071,36 +1082,38 @@ export default function App() {
               />
             })
           ) : (
-            <div className="px-4 md:px-8">
-              <div className="flex flex-wrap items-center justify-between gap-4 mb-4 md:mb-6">
-                {/* SỬA: ĐÃ BỔ SUNG THÊM CLASS text-white ĐỂ KHÔNG BỊ CHÌM VÀO NỀN ĐEN */}
-                <h2 className="text-xl md:text-2xl font-bold text-white flex flex-wrap items-center gap-2 md:gap-3">
+            <div className="px-4 md:px-12">
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-6 md:mb-8 border-b border-zinc-800 pb-4">
+                <h2 className="text-2xl md:text-3xl font-bold text-white flex flex-wrap items-center gap-3">
                   {searchQuery ? `Kết quả tìm kiếm cho: "${searchQuery}"` : currentCategory}
-                  {showOnlyFull && <span className="bg-red-600 text-white text-[10px] md:text-xs px-2 py-1 rounded uppercase tracking-wider">Đã Full</span>}
+                  {showOnlyFull && <span className="bg-red-600 text-white text-[10px] md:text-xs px-2.5 py-1 rounded shadow-sm uppercase tracking-wider">Đã Full</span>}
                 </h2>
                 
                 {!searchQuery && currentCategory !== 'Tất cả' && (
                   <button
                     onClick={() => setCategoryToDelete(currentCategory)}
-                    className="text-xs md:text-sm text-red-500 hover:text-white bg-red-500/10 hover:bg-red-600 flex items-center gap-1.5 transition px-3 py-1.5 rounded border border-red-500/30"
+                    className="text-xs md:text-sm font-medium text-red-500 hover:text-white bg-red-500/10 hover:bg-red-600 flex items-center gap-2 transition px-4 py-2 rounded-md border border-red-500/20"
                   >
-                    <Trash2 size={16} /> Xóa kênh này
+                    <Trash2 size={16} /> Xóa toàn bộ kênh
                   </button>
                 )}
               </div>
               
-              <div className="flex flex-wrap gap-2 md:gap-4">
+              <div className="flex flex-wrap gap-4 md:gap-6">
                 {filteredMovies.map(movie => (
                   <MovieCard 
                     key={movie.id} 
                     movie={movie} 
                     onClick={handleSelectMovie} 
                     onDelete={handleDeleteRequest}
-                    className="flex-none w-[140px] sm:w-[160px] md:w-[220px] lg:w-[256px]"
+                    className="flex-none w-[160px] sm:w-[200px] md:w-[260px] lg:w-[280px]"
                   />
                 ))}
                 {filteredMovies.length === 0 && (
-                  <p className="text-zinc-500 w-full py-10 md:py-20 text-center text-sm md:text-base">Không tìm thấy nội dung phù hợp với bộ lọc hiện tại.</p>
+                  <div className="w-full flex flex-col items-center justify-center py-20 opacity-50">
+                    <Search size={48} className="mb-4 text-zinc-600" />
+                    <p className="text-zinc-400 text-lg font-medium">Không tìm thấy nội dung phù hợp với bộ lọc hiện tại.</p>
+                  </div>
                 )}
               </div>
             </div>
@@ -1108,8 +1121,9 @@ export default function App() {
         </div>
       </main>
 
-      <footer className="py-6 md:py-8 flex flex-col items-center text-center text-zinc-600 text-xs md:text-sm gap-2">
-        <p>YouFlix - Clone Project. Dữ liệu lưu trữ thông minh.</p>
+      <footer className="py-8 md:py-12 mt-10 border-t border-zinc-900 flex flex-col items-center text-center text-zinc-600 text-xs md:text-sm gap-3">
+        <h1 className="text-red-600/50 font-black text-2xl tracking-tighter drop-shadow-sm">YOUFLIX</h1>
+        <p className="font-medium">YouFlix - Clone Project. Dữ liệu lưu trữ thông minh.</p>
         <button 
           onClick={() => {
             if (useCloud && user) {
@@ -1123,7 +1137,7 @@ export default function App() {
             }
             window.scrollTo(0,0);
           }}
-          className="text-[10px] md:text-xs text-zinc-500 hover:text-white underline transition"
+          className="text-xs text-zinc-500 hover:text-zinc-300 underline transition mt-2"
         >
           Khôi phục dữ liệu gốc
         </button>
