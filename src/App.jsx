@@ -203,7 +203,7 @@ function Hero({ movie, onPlay }) {
         <div className="flex gap-2 md:gap-4">
           <button 
             onClick={() => onPlay(movie)}
-            className="flex items-center gap-1 md:gap-2 bg-white text-white px-4 md:px-8 py-1.5 md:py-2.5 rounded hover:bg-white/80 transition font-bold text-sm md:text-lg"
+            className="flex items-center gap-1 md:gap-2 bg-white text-black px-4 md:px-8 py-1.5 md:py-2.5 rounded hover:bg-white/80 transition font-bold text-sm md:text-lg"
           >
             <Play size={18} className="md:w-6 md:h-6" fill="currentColor" /> Phát ngay
           </button>
@@ -247,7 +247,7 @@ function MovieCard({ movie, onClick, onDelete, className = "flex-none w-[140px] 
         <h3 className="text-white font-bold text-xs md:text-sm line-clamp-2 mb-1">{movie.title}</h3>
         <p className="text-zinc-400 text-[10px] md:text-xs">{movie.category}</p>
         <div className="flex items-center gap-1 md:gap-2 mt-1 md:mt-2">
-          <button className="bg-white text-white rounded-full p-1 md:p-1.5 hover:bg-zinc-200 transition pointer-events-auto">
+          <button className="bg-white text-black rounded-full p-1 md:p-1.5 hover:bg-zinc-200 transition pointer-events-auto">
             <Play size={10} className="md:w-3.5 md:h-3.5" fill="currentColor" />
           </button>
         </div>
