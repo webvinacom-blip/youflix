@@ -63,13 +63,11 @@ const getThumbnail = (videoId) => `https://img.youtube.com/vi/${videoId}/hqdefau
 const getHighResThumbnail = (videoId) => `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
 
 const detectIsFull = (title, description = '') => {
-  // 1. Đã xóa chữ 'full' ra khỏi mảng này
   const keywords = ['trọn bộ', 'tập cuối', 'end', 'hoàn tất'];
   const textToScan = (title + ' ' + description).toLowerCase();
   
   const fullRegex = /full(?!\s*(version|part|phần|tập|season|mùa|ss|p|pt|-)\s*\d+)(?!\s+\d{1,2}\b)/;
   
-  // 2. Kết hợp kiểm tra bằng Regex và kiểm tra mảng từ khóa
   return fullRegex.test(textToScan) || keywords.some(kw => textToScan.includes(kw));
 };
 
@@ -92,7 +90,7 @@ function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel }) {
         <p className="text-zinc-400 mb-6 text-xs md:text-sm">{message}</p>
         <div className="flex justify-end gap-3">
           <button onClick={onCancel} className="px-4 py-2 rounded text-zinc-300 hover:text-white hover:bg-zinc-800 transition font-medium text-sm">Hủy</button>
-          <button onClick={onConfirm} className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white font-bold transition text-sm">Xóa phim</button>
+          <button onClick={onConfirm} className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white font-bold transition text-sm">Xác nhận xóa</button>
         </div>
       </div>
     </div>
@@ -201,7 +199,6 @@ function Hero({ movie, onPlay }) {
   );
 }
 
-// Bổ sung className để hỗ trợ cả Grid (cuộn ngang) và Flex (trang tìm kiếm)
 function MovieCard({ movie, onClick, onDelete, className = "flex-none w-[140px] sm:w-[160px] md:w-64" }) {
   return (
     <div 
@@ -239,16 +236,26 @@ function MovieCard({ movie, onClick, onDelete, className = "flex-none w-[140px] 
   );
 }
 
-function MovieRow({ title, movies, onMovieClick, onDeleteMovie }) {
+// Bổ sung nút Xóa kênh vào hàng phim
+function MovieRow({ title, movies, onMovieClick, onDeleteMovie, onDeleteCategory }) {
   if (movies.length === 0) return null;
   
   return (
-    // w-full overflow-hidden để khóa tràn trang
     <div className="mb-6 md:mb-8 relative w-full overflow-hidden">
-      <h2 className="text-lg md:text-xl font-bold text-white mb-2 md:mb-4 px-4 md:px-8">{title}</h2>
+      <div className="flex items-center justify-between px-4 md:px-8 mb-2 md:mb-4">
+        <h2 className="text-lg md:text-xl font-bold text-white">{title}</h2>
+        {onDeleteCategory && (
+          <button 
+            onClick={() => onDeleteCategory(title)}
+            className="text-xs text-red-500 hover:text-red-400 flex items-center gap-1 bg-red-500/10 hover:bg-red-500/20 px-2 py-1 rounded transition"
+            title={`Xóa toàn bộ phim trong kênh ${title}`}
+          >
+            <Trash2 size={14} /> Xóa kênh
+          </button>
+        )}
+      </div>
       
       <div 
-        // Lưới 2 dòng tự động co giãn kích thước cột theo màn hình
         className="grid grid-rows-2 grid-flow-col auto-cols-[140px] sm:auto-cols-[180px] md:auto-cols-[220px] lg:auto-cols-[280px] gap-2 md:gap-4 pb-4 px-4 md:px-8 overflow-x-auto scroll-smooth w-full snap-x snap-mandatory"
         style={{ scrollbarWidth: 'thin' }}
       >
@@ -258,7 +265,6 @@ function MovieRow({ title, movies, onMovieClick, onDeleteMovie }) {
             movie={movie} 
             onClick={onMovieClick} 
             onDelete={onDeleteMovie} 
-            // Bắt buộc thẻ phim giãn 100% lấp đầy ô Grid
             className="w-full h-full snap-start" 
           />
         ))}
@@ -286,21 +292,23 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-[#141414] overflow-y-auto">
-      {/* Thanh header chứa nút Quay lại nằm phía trên video */}
-      <div className="sticky top-0 z-[110] w-full bg-[#141414]/95 backdrop-blur px-4 md:px-6 py-3 md:py-4 flex items-center">
-        <button
-          onClick={onClose}
-          className="inline-flex items-center gap-1 md:gap-2 text-white bg-white/10 hover:bg-white/20 px-3 md:px-4 py-1.5 md:py-2 rounded-full transition text-xs md:text-base"
-        >
-          <ChevronLeft size={18} className="md:w-5 md:h-5" /> Quay lại
-        </button>
-      </div>
+    // SỬA CHUẨN: Hạ z-index xuống 90 để không đè lên Navbar (z-50 của bạn).
+    <div className="fixed inset-0 z-[40] bg-[#141414] overflow-y-auto">
+      
+      {/* SỬA CHUẨN: Đưa nút Quay lại xuống dưới Navbar */}
+      <button 
+        onClick={onClose}
+        className="fixed top-20 md:top-24 left-4 md:left-6 z-[45] flex items-center gap-1 md:gap-2 text-white bg-black/50 hover:bg-black/80 px-3 md:px-4 py-1.5 md:py-2 rounded-full backdrop-blur transition text-xs md:text-base shadow-lg"
+      >
+        <ChevronLeft size={18} className="md:w-5 md:h-5" /> Quay lại
+      </button>
+      
+      {/* Thêm khoảng đệm để video không bị Navbar đè lên */}
+      <div className="h-16 md:h-20 w-full"></div>
 
-      {/* Khung video nằm ngay bên dưới thanh header */}
       <div className="w-full h-[35vh] sm:h-[50vh] lg:h-[80vh] bg-black">
-        <iframe
-          src={`https://www.youtube-nocookie.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_lang_pref=none&hl=vm`}
+        <iframe 
+          src={`https://www.youtube.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_load_policy=0&iv_load_policy=3&cc_lang_pref=en&modestbranding=1&playsinline=1&showinfo=0&controls=1&fs=1&disablekb=0&enablejsapi=1&origin=${window.location.origin}`}
           title={movie.title}
           className="w-full h-full border-0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -365,7 +373,6 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete }) {
                     movie={m} 
                     onClick={(movie) => { window.scrollTo(0,0); onMovieClick(movie); }} 
                     onDelete={onDelete}
-                    // Giữ nguyên responsive mặc định của component cho phần này
                     className="flex-none w-[140px] sm:w-[160px] md:w-64 snap-start"
                   />
                 ))
@@ -666,7 +673,7 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
 // --- Main App ---
 
 export default function App() {
-useEffect(() => {
+  useEffect(() => {
     if (!useCloud || !auth) return;
 
     const initAuth = async () => {
@@ -694,34 +701,37 @@ useEffect(() => {
   });
 
   useEffect(() => {
-  if (!db) return;
+    if (!db) return;
 
-  const moviesCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'movies');
-  
-  const unsubscribe = onSnapshot(moviesCollectionRef, (snapshot) => {
-    const cloudMovies = [];
-    snapshot.forEach((doc) => {
-      cloudMovies.push(doc.data());
-    });
+    const moviesCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'movies');
     
-    if (cloudMovies.length > 0) {
-      cloudMovies.sort((a, b) => Number(b.id) - Number(a.id));
-      setMovies(cloudMovies); // Cập nhật danh sách từ Firebase
-    }
-  }, (error) => {
-    console.error("Lỗi đọc dữ liệu từ Firestore:", error);
-  });
+    const unsubscribe = onSnapshot(moviesCollectionRef, (snapshot) => {
+      const cloudMovies = [];
+      snapshot.forEach((doc) => {
+        cloudMovies.push(doc.data());
+      });
+      
+      if (cloudMovies.length > 0) {
+        cloudMovies.sort((a, b) => Number(b.id) - Number(a.id));
+        setMovies(cloudMovies);
+      }
+    }, (error) => {
+      console.error("Lỗi đọc dữ liệu từ Firestore:", error);
+    });
 
-  return () => unsubscribe();
-}, [db, appId]);
+    return () => unsubscribe();
+  }, [db, appId]);
   
   const [currentCategory, setCategory] = useState('Tất cả');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [movieToDelete, setMovieToDelete] = useState(null);
+  
+  // STATE MỚI: Xử lý chức năng xóa Kênh
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
+  
   const [showOnlyFull, setShowOnlyFull] = useState(false);
-
   const [user, setUser] = useState(null);
 
   const dynamicCategories = useMemo(() => {
@@ -746,17 +756,6 @@ useEffect(() => {
         console.error("Lỗi xác thực:", error);
       }
     };
-
-    const saveMovieToCloud = async (newMovie) => {
-    if (db) {
-      try {
-        const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', newMovie.id);
-        await setDoc(movieDocRef, newMovie);
-      } catch (err) {
-        console.error("Lỗi lưu phim lên Firestore:", err);
-      }
-    }
-  };
     initAuth();
     
     const unsubscribe = onAuthStateChanged(auth, setUser);
@@ -828,18 +827,41 @@ useEffect(() => {
     }
   };
 
+  // FUNCTION MỚI: Xử lý xóa toàn bộ phim trong kênh (thể loại)
+  const confirmDeleteCategory = async () => {
+    if (categoryToDelete) {
+      const moviesInCat = movies.filter(m => m.category === categoryToDelete);
+      if (db) {
+        moviesInCat.forEach(async (m) => {
+          try {
+            const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', m.id);
+            await deleteDoc(movieDocRef);
+          } catch (e) {
+            console.error("Lỗi khi xóa phim trong kênh:", e);
+          }
+        });
+      } else {
+        setMovies(prev => prev.filter(m => m.category !== categoryToDelete));
+      }
+
+      if (currentCategory === categoryToDelete) {
+        setCategory('Tất cả');
+      }
+      setCategoryToDelete(null);
+    }
+  };
+
   const filteredMovies = useMemo(() => {
-  return movies.filter(m => {
-    const matchCat = currentCategory === 'Tất cả' || m.category === currentCategory;
-    const matchSearch = m.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                        (m.description || '').toLowerCase().includes(searchQuery.toLowerCase());
-    
-    // Ép chạy lại thuật toán kiểm tra thay vì dùng m.isFull của dữ liệu cũ
-    const matchFullStatus = showOnlyFull ? detectIsFull(m.title, m.description) : true;
-    
-    return matchCat && matchSearch && matchFullStatus;
-  });
-}, [movies, currentCategory, searchQuery, showOnlyFull]);
+    return movies.filter(m => {
+      const matchCat = currentCategory === 'Tất cả' || m.category === currentCategory;
+      const matchSearch = m.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          (m.description || '').toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchFullStatus = showOnlyFull ? detectIsFull(m.title, m.description) : true;
+      
+      return matchCat && matchSearch && matchFullStatus;
+    });
+  }, [movies, currentCategory, searchQuery, showOnlyFull]);
 
   const heroMovie = filteredMovies.length > 0 ? filteredMovies[0] : null;
 
@@ -864,14 +886,34 @@ useEffect(() => {
             dynamicCategories.filter(c => c !== 'Tất cả').map(cat => {
               const catMovies = filteredMovies.filter(m => m.category === cat);
               if (catMovies.length === 0) return null;
-              return <MovieRow key={cat} title={cat} movies={catMovies} onMovieClick={setSelectedMovie} onDeleteMovie={handleDeleteRequest} />
+              return <MovieRow 
+                key={cat} 
+                title={cat} 
+                movies={catMovies} 
+                onMovieClick={setSelectedMovie} 
+                onDeleteMovie={handleDeleteRequest} 
+                onDeleteCategory={setCategoryToDelete} // Truyền hàm xóa kênh vào
+              />
             })
           ) : (
             <div className="px-4 md:px-8">
-              <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex flex-wrap items-center gap-2 md:gap-3">
-                {searchQuery ? `Kết quả tìm kiếm cho: "${searchQuery}"` : currentCategory}
-                {showOnlyFull && <span className="bg-red-600 text-white text-[10px] md:text-xs px-2 py-1 rounded uppercase tracking-wider">Đã Full</span>}
-              </h2>
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-4 md:mb-6">
+                <h2 className="text-xl md:text-2xl font-bold flex flex-wrap items-center gap-2 md:gap-3">
+                  {searchQuery ? `Kết quả tìm kiếm cho: "${searchQuery}"` : currentCategory}
+                  {showOnlyFull && <span className="bg-red-600 text-white text-[10px] md:text-xs px-2 py-1 rounded uppercase tracking-wider">Đã Full</span>}
+                </h2>
+                
+                {/* Nút xóa Kênh khi đang xem một danh mục cụ thể */}
+                {!searchQuery && currentCategory !== 'Tất cả' && (
+                  <button
+                    onClick={() => setCategoryToDelete(currentCategory)}
+                    className="text-xs md:text-sm text-red-500 hover:text-white bg-red-500/10 hover:bg-red-600 flex items-center gap-1.5 transition px-3 py-1.5 rounded border border-red-500/30"
+                  >
+                    <Trash2 size={16} /> Xóa kênh này
+                  </button>
+                )}
+              </div>
+              
               <div className="flex flex-wrap gap-2 md:gap-4">
                 {filteredMovies.map(movie => (
                   <MovieCard 
@@ -931,12 +973,22 @@ useEffect(() => {
         />
       )}
 
+      {/* Modal xác nhận xóa Video lẻ */}
       <ConfirmDialog 
         isOpen={!!movieToDelete}
         title="Xác nhận xóa phim"
         message="Bạn có chắc chắn muốn xóa bộ phim này khỏi thư viện? Hành động này không thể hoàn tác."
         onConfirm={confirmDelete}
         onCancel={() => setMovieToDelete(null)}
+      />
+      
+      {/* Modal xác nhận xóa Toàn bộ Kênh */}
+      <ConfirmDialog 
+        isOpen={!!categoryToDelete}
+        title="Xác nhận xóa kênh"
+        message={`Bạn có chắc chắn muốn xóa kênh "${categoryToDelete}" cùng TẤT CẢ video bên trong? Hành động này KHÔNG THỂ hoàn tác.`}
+        onConfirm={confirmDeleteCategory}
+        onCancel={() => setCategoryToDelete(null)}
       />
     </div>
   );
