@@ -292,36 +292,75 @@ function MovieRow({ title, movies, onMovieClick, onDeleteMovie, onDeleteCategory
   );
 }
 
-function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniPlayer, onToggleMiniPlayer }) {
+function DetailView({ movie: initialMovie, allMovies, onClose, onMovieClick, onDelete, isMiniPlayer, onToggleMiniPlayer }) {
   const [autoNext, setAutoNext] = useState(true);
+  const autoNextRef = useRef(true);
+  
+  // Tách State hiển thị thông tin UI (Title, Desc) ra khỏi Iframe
+  const [displayMovie, setDisplayMovie] = useState(initialMovie);
+  const [iframeSrc, setIframeSrc] = useState('');
   const iframeRef = useRef(null);
+  const similarRowRef = useRef(null);
 
-  // LOGIC THÔNG MINH CHO PLAYLIST VÀ NỘI DUNG TƯƠNG TỰ
+  useEffect(() => { 
+    autoNextRef.current = autoNext; 
+  }, [autoNext]);
+
+  // CHÌA KHÓA VƯỢT LỖI CHẠY NỀN: Nạp trực tiếp list video tiếp theo vào Youtube (native playlist)
+  useEffect(() => {
+    setDisplayMovie(initialMovie);
+    
+    let nextVideoIds = '';
+    if (autoNextRef.current) {
+      const similar = allMovies.filter(m => m.category === initialMovie.category && m.id !== initialMovie.id);
+      let nextList = similar;
+      if (initialMovie.playlistId && initialMovie.playlistIndex !== undefined) {
+        nextList = similar.filter(m => (m.playlistIndex || 0) > initialMovie.playlistIndex).sort((a,b) => (a.playlistIndex || 0) - (b.playlistIndex || 0));
+        if (nextList.length === 0) nextList = similar; 
+      }
+      nextVideoIds = nextList.map(m => m.videoId).slice(0, 30).join(',');
+    }
+
+    const newSrc = `https://www.youtube.com/embed/${initialMovie.videoId}?autoplay=1&rel=0&cc_load_policy=0&iv_load_policy=3&cc_lang_pref=en&modestbranding=1&playsinline=1&showinfo=0&controls=1&fs=1&disablekb=0&enablejsapi=1&origin=${window.location.origin}${nextVideoIds ? `&playlist=${nextVideoIds}` : ''}`;
+    setIframeSrc(newSrc);
+    
+    // Chỉ tạo lại iframe khi người dùng click dứt khoát vào phim mới từ ngoài trang chủ
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialMovie.id]); 
+
+  // Lắng nghe YouTube tự động Next -> Đổi Text giao diện mà KHÔNG load lại video
+  useEffect(() => {
+    const handleMessage = (e) => {
+      if (!e.origin.includes('youtube.com') && !e.origin.includes('youtube-nocookie.com')) return;
+      try {
+        const data = JSON.parse(e.data);
+        if (data.event === 'infoDelivery' && data.info?.videoData?.video_id) {
+          const currentPlayingId = data.info.videoData.video_id;
+          
+          if (currentPlayingId !== displayMovie.videoId) {
+            const nextMeta = allMovies.find(m => m.videoId === currentPlayingId);
+            if (nextMeta) {
+              setDisplayMovie(nextMeta); // UI đổi chữ, Iframe vẫn chạy tiếp trơn tru
+            }
+          }
+        }
+      } catch (err) {}
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [displayMovie.videoId, allMovies]);
+
   const similarMovies = useMemo(() => {
-    // 1. Nếu phim này thuộc 1 Playlist rõ ràng -> Hiện TOÀN BỘ phim trong Playlist, sắp xếp đúng thứ tự
-    if (movie.playlistId) {
+    if (displayMovie.playlistId) {
       return allMovies
-        .filter(m => m.playlistId === movie.playlistId && m.id !== movie.id)
+        .filter(m => m.playlistId === displayMovie.playlistId && m.id !== displayMovie.id)
         .sort((a, b) => (a.playlistIndex || 0) - (b.playlistIndex || 0));
     }
-    // 2. Nếu chỉ là phim lẻ -> Hiện tối đa 15 phim cùng thể loại
     return allMovies
-      .filter(m => m.category === movie.category && m.id !== movie.id)
+      .filter(m => m.category === displayMovie.category && m.id !== displayMovie.id)
       .slice(0, 15);
-  }, [movie, allMovies]);
-
-  // XÁC ĐỊNH VIDEO TIẾP THEO ĐỂ AUTO-NEXT
-  const nextMovieForAutoPlay = useMemo(() => {
-    // Nếu là Playlist, tìm tập liền kề phía sau
-    if (movie.playlistId && movie.playlistIndex !== undefined) {
-      const nextInPlaylist = similarMovies.find(m => m.playlistIndex > movie.playlistIndex);
-      return nextInPlaylist || similarMovies[0]; // Hết playlist thì quay lại video đầu tiên trong list
-    }
-    // Nếu phim lẻ, phát video đầu tiên trong mục tương tự
-    return similarMovies[0];
-  }, [similarMovies, movie]);
-
-  const similarRowRef = useRef(null);
+  }, [displayMovie, allMovies]);
 
   const handleScroll = (direction) => {
     if (similarRowRef.current) {
@@ -340,25 +379,6 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
     }
     return () => { document.body.style.overflow = 'auto'; };
   }, [isMiniPlayer]);
-
-  useEffect(() => {
-    const handleMessage = (e) => {
-      if (!e.origin.includes('youtube.com') && !e.origin.includes('youtube-nocookie.com')) return;
-      try {
-        const data = JSON.parse(e.data);
-        const isEnded = (data.event === 'onStateChange' && data.info === 0) || 
-                        (data.event === 'infoDelivery' && data.info?.playerState === 0);
-
-        if (isEnded && autoNext && nextMovieForAutoPlay) {
-          window.scrollTo(0, 0);
-          onMovieClick(nextMovieForAutoPlay);
-        }
-      } catch (err) {}
-    };
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [autoNext, nextMovieForAutoPlay, onMovieClick]);
 
   return (
     <div className={isMiniPlayer 
@@ -393,7 +413,7 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
         >
           <div className="flex items-center gap-2 overflow-hidden w-full pr-2">
             <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0"></div>
-            <h3 className="text-xs font-bold text-white truncate">{movie.title}</h3>
+            <h3 className="text-xs font-bold text-white truncate">{displayMovie.title}</h3>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button onClick={(e) => { e.stopPropagation(); onToggleMiniPlayer(); }} className="text-zinc-300 hover:text-white p-1"><Maximize2 size={14} /></button>
@@ -410,8 +430,8 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
               e.target.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), '*');
             }
           }}
-          src={`https://www.youtube.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_load_policy=0&iv_load_policy=3&cc_lang_pref=en&modestbranding=1&playsinline=1&showinfo=0&controls=1&fs=1&disablekb=0&enablejsapi=1&origin=${window.location.origin}`}
-          title={movie.title}
+          src={iframeSrc}
+          title={displayMovie.title}
           className={`w-full h-full border-0 ${isMiniPlayer ? "pointer-events-none" : ""}`}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowFullScreen={!isMiniPlayer}
@@ -423,12 +443,12 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
           <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-3 md:mb-4">
             <span className="text-green-500 font-bold text-sm md:text-lg">Độ phân giải cao</span>
             <span className="border border-zinc-500 text-zinc-300 text-xs md:text-sm px-1.5 md:px-2 py-0.5 rounded-sm">4K</span>
-            {movie.isFull && (
+            {displayMovie.isFull && (
               <span className="bg-red-600 text-white font-bold text-xs md:text-sm px-1.5 md:px-2 py-0.5 rounded-sm uppercase flex items-center gap-1">
                 <CheckCircle size={14}/> Đã Full
               </span>
             )}
-            <span className="bg-zinc-800 text-white text-xs md:text-sm px-2 md:px-3 py-1 rounded-full">{movie.category}</span>
+            <span className="bg-zinc-800 text-white text-xs md:text-sm px-2 md:px-3 py-1 rounded-full">{displayMovie.category}</span>
             
             <label className="flex items-center gap-2 ml-auto text-xs md:text-sm text-zinc-300 cursor-pointer bg-zinc-800/50 hover:bg-zinc-700 px-3 py-1.5 rounded-full transition border border-zinc-700">
               <input 
@@ -440,13 +460,13 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
               Tự động phát tập tiếp theo
             </label>
           </div>
-          <h1 className="text-2xl md:text-5xl font-bold text-white mb-3 md:mb-6">{movie.title}</h1>
+          <h1 className="text-2xl md:text-5xl font-bold text-white mb-3 md:mb-6">{displayMovie.title}</h1>
           <p className="text-sm md:text-lg text-zinc-300 leading-relaxed mb-6 md:mb-8">
-            {movie.description || "Chưa có thông tin mô tả chi tiết cho video này."}
+            {displayMovie.description || "Chưa có thông tin mô tả chi tiết cho video này."}
           </p>
           <div className="flex flex-wrap gap-4 items-center">
             <a 
-              href={`https://www.youtube.com/watch?v=${movie.videoId}`}
+              href={`https://www.youtube.com/watch?v=${displayMovie.videoId}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 md:gap-2 text-zinc-400 hover:text-white transition text-sm md:text-base"
@@ -454,7 +474,7 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
               Mở trên YouTube
             </a>
             <button 
-              onClick={() => onDelete(movie.id)}
+              onClick={() => onDelete(displayMovie.id)}
               className="inline-flex items-center gap-1.5 md:gap-2 text-red-500 hover:text-red-400 transition text-sm md:text-base"
             >
               <Trash2 size={16} className="md:w-[18px] md:h-[18px]" /> Xóa phim này
@@ -463,9 +483,8 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
         </div>
         
         <div className="w-full relative group">
-          {/* Đổi tiêu đề UI dựa trên dữ liệu Playlist */}
           <h3 className="text-lg md:text-xl font-bold text-white mb-4 md:mb-6">
-            {movie.playlistId ? 'Danh sách phát (Playlist)' : 'Nội dung tương tự'}
+            {displayMovie.playlistId ? 'Danh sách phát (Playlist)' : 'Nội dung tương tự'}
           </h3>
           <div className="relative w-full overflow-hidden">
             {similarMovies.length > 0 && (
@@ -538,57 +557,41 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
           setIsFull(true);
         }
       }
-    } catch (e) {
-      console.warn("Could not fetch title automatically");
-    }
+    } catch (e) {}
   };
 
   const handleUrlChange = (e) => {
     const val = e.target.value;
     setUrl(val);
     const id = extractYoutubeId(val);
-    if (id) {
-      fetchVideoInfo(id);
-    }
+    if (id) fetchVideoInfo(id);
   };
 
   const handleSubmitSingle = (e) => {
     e.preventDefault();
     setError('');
-    
     const videoId = extractYoutubeId(url);
-    if (!videoId) {
-      setError("Link YouTube không hợp lệ.");
-      return;
+    if (!videoId) return setError("Link YouTube không hợp lệ.");
+
+    if (existingMovies.some(m => m.videoId === videoId || m.title.toLowerCase().trim() === title.toLowerCase().trim())) {
+      return setError("Phim này đã tồn tại trong thư viện.");
     }
 
-    const isDuplicate = existingMovies.some(m => m.videoId === videoId || m.title.toLowerCase().trim() === title.toLowerCase().trim());
-    if (isDuplicate) {
-      setError("Phim này (hoặc link video này) đã tồn tại trong thư viện.");
-      return;
-    }
-
-    const newMovie = {
+    onAddMovies([{
       id: Date.now().toString(),
       videoId,
       title: title || "Video không có tiêu đề",
       category,
       description,
       isFull
-    };
-    
-    onAddMovies([newMovie]);
+    }]);
     onClose();
   };
 
   const handleSubmitChannel = async (e) => {
     e.preventDefault();
     setError('');
-    
-    if (!channelId || !apiKey) {
-      setError("Vui lòng nhập Channel ID và API Key.");
-      return;
-    }
+    if (!channelId || !apiKey) return setError("Vui lòng nhập Channel ID và API Key.");
 
     setLoading(true);
     try {
@@ -600,10 +603,7 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
       while (fetchedCount < limit) {
         const fetchCount = Math.min(50, limit - fetchedCount);
         let fetchUrl = `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${channelId}&part=snippet,id&order=date&maxResults=${fetchCount}&type=video`;
-        
-        if (nextPageToken) {
-          fetchUrl += `&pageToken=${nextPageToken}`;
-        }
+        if (nextPageToken) fetchUrl += `&pageToken=${nextPageToken}`;
 
         const res = await fetch(fetchUrl);
         const data = await res.json();
@@ -620,33 +620,26 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
              const isDupLocal = allVideos.some(m => m.videoId === vidId || m.title.toLowerCase().trim() === item.snippet.title.toLowerCase().trim());
              return !isDupDb && !isDupLocal;
           })
-          .map(({item, index}) => {
-             const isVideoFull = detectIsFull(item.snippet.title, item.snippet.description);
-             return {
-              id: Date.now() + '_' + (fetchedCount + index) + '_' + Math.random().toString(36).substr(2, 9),
-              videoId: item.id.videoId,
-              title: item.snippet.title,
-              description: item.snippet.description,
-              category: category,
-              isFull: isVideoFull
-             };
-          });
+          .map(({item, index}) => ({
+            id: Date.now() + '_' + (fetchedCount + index) + '_' + Math.random().toString(36).substr(2, 9),
+            videoId: item.id.videoId,
+            title: item.snippet.title,
+            description: item.snippet.description,
+            category: category,
+            isFull: detectIsFull(item.snippet.title, item.snippet.description)
+          }));
 
         allVideos = [...allVideos, ...newMovies];
         fetchedCount += data.items.length;
         nextPageToken = data.nextPageToken;
-
         if (!nextPageToken) break;
       }
 
-      if (allVideos.length === 0) {
-        throw new Error("Không tìm thấy video nào.");
-      }
-
+      if (allVideos.length === 0) throw new Error("Không tìm thấy video nào mới.");
       onAddMovies(allVideos);
       onClose();
     } catch (err) {
-      setError("Lỗi khi tải kênh: " + err.message);
+      setError("Lỗi: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -655,12 +648,8 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
   const handleSubmitPlaylist = async (e) => {
     e.preventDefault();
     setError('');
-    
     const extractedPlaylistId = extractPlaylistId(playlistInput);
-    if (!extractedPlaylistId || !apiKey) {
-      setError("Vui lòng nhập Link hoặc ID Playlist và API Key.");
-      return;
-    }
+    if (!extractedPlaylistId || !apiKey) return setError("Vui lòng nhập Link hoặc ID Playlist và API Key.");
 
     setLoading(true);
     try {
@@ -672,10 +661,7 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
       while (fetchedCount < limit) {
         const fetchCount = Math.min(50, limit - fetchedCount);
         let fetchUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${extractedPlaylistId}&maxResults=${fetchCount}&key=${apiKey}`;
-        
-        if (nextPageToken) {
-          fetchUrl += `&pageToken=${nextPageToken}`;
-        }
+        if (nextPageToken) fetchUrl += `&pageToken=${nextPageToken}`;
 
         const res = await fetch(fetchUrl);
         const data = await res.json();
@@ -692,35 +678,28 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
              const isDupLocal = allVideos.some(m => m.videoId === vidId || m.title.toLowerCase().trim() === item.snippet.title.toLowerCase().trim());
              return !isDupDb && !isDupLocal;
           })
-          .map(({item, index}) => {
-             const isVideoFull = detectIsFull(item.snippet.title, item.snippet.description);
-             return {
-              id: Date.now() + '_' + (fetchedCount + index) + '_' + Math.random().toString(36).substr(2, 9),
-              videoId: item.snippet.resourceId.videoId,
-              title: item.snippet.title,
-              description: item.snippet.description,
-              category: category,
-              isFull: isVideoFull,
-              playlistId: extractedPlaylistId,
-              playlistIndex: fetchedCount + index // Gắn chỉ mục để Auto-Next biết thứ tự tập
-             };
-          });
+          .map(({item, index}) => ({
+            id: Date.now() + '_' + (fetchedCount + index) + '_' + Math.random().toString(36).substr(2, 9),
+            videoId: item.snippet.resourceId.videoId,
+            title: item.snippet.title,
+            description: item.snippet.description,
+            category: category,
+            isFull: detectIsFull(item.snippet.title, item.snippet.description),
+            playlistId: extractedPlaylistId,
+            playlistIndex: fetchedCount + index
+          }));
 
         allVideos = [...allVideos, ...newMovies];
         fetchedCount += data.items.length;
         nextPageToken = data.nextPageToken;
-
         if (!nextPageToken) break;
       }
 
-      if (allVideos.length === 0) {
-        throw new Error("Không tìm thấy video mới nào (hoặc playlist trống/chế độ riêng tư).");
-      }
-
+      if (allVideos.length === 0) throw new Error("Không tìm thấy video mới nào trong playlist.");
       onAddMovies(allVideos);
       onClose();
     } catch (err) {
-      setError("Lỗi khi tải Playlist: " + err.message);
+      setError("Lỗi: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -931,7 +910,7 @@ export default function App() {
     if (!useCloud) {
       const saved = localStorage.getItem('youflix_movies_v2');
       if (saved) {
-        try { return JSON.parse(saved); } catch (e) { /* ignore */ }
+        try { return JSON.parse(saved); } catch (e) {}
       }
       return initialMovies;
     }
@@ -1017,9 +996,7 @@ export default function App() {
         try {
           const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', movieToDelete);
           await deleteDoc(movieDocRef);
-        } catch (e) {
-          console.error("Lỗi khi xóa phim:", e);
-        }
+        } catch (e) {}
       } else {
         setMovies(prev => prev.filter(m => m.id !== movieToDelete));
       }
@@ -1040,9 +1017,7 @@ export default function App() {
           try {
             const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', m.id);
             await deleteDoc(movieDocRef);
-          } catch (e) {
-            console.error("Lỗi khi xóa phim trong kênh:", e);
-          }
+          } catch (e) {}
         });
       } else {
         setMovies(prev => prev.filter(m => m.category !== categoryToDelete));
