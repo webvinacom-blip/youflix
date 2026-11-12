@@ -6,7 +6,7 @@ import { getAnalytics } from "firebase/analytics";
 
 // --- Cấu hình Firebase của riêng bạn ---
 const firebaseConfig = {
-  apiKey: "AIzaSyCFHM0yidEmIRU0DgSsYr721J1QfRFQJ0M",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: "youflix-shared.firebaseapp.com",
   projectId: "youflix-shared",
   storageBucket: "youflix-shared.appspot.com",
@@ -16,12 +16,12 @@ const firebaseConfig = {
 };
 
 // Khởi tạo Firebase trực tiếp để dùng chung cho mọi người
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-const auth = getAuth(app);
-const db = getFirestore(app);
+const useCloud = Boolean(firebaseConfig.apiKey);
+const app = useCloud ? initializeApp(firebaseConfig) : null;
+const analytics = app ? getAnalytics(app) : null;
+const auth = app ? getAuth(app) : null;
+const db = app ? getFirestore(app) : null;
 let appId = 'youflix-shared-room-v3';
-let useCloud = true;
 
 // --- Icons ---
 const Search = ({ size = 24, className = "" }) => (
@@ -267,7 +267,7 @@ function MovieRow({ title, movies, onMovieClick, onDeleteMovie }) {
   );
 }
 
-function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete }) {
+function DetailView({ movie, allMovies, onMovieClick, onDelete }) {
   const similarMovies = useMemo(() => {
     return allMovies
       .filter(m => m.category === movie.category && m.id !== movie.id)
@@ -286,17 +286,7 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-[#141414] overflow-y-auto">
-      {/* Thanh header chứa nút Quay lại nằm phía trên video */}
-      <div className="sticky top-0 z-[110] w-full bg-[#141414]/95 backdrop-blur px-4 md:px-6 pt-28 md:pt-20 pb-3 md:pb-4 flex items-center">
-        <button
-          onClick={onClose}
-          className="inline-flex items-center gap-1 md:gap-2 text-white bg-white/10 hover:bg-white/20 px-3 md:px-4 py-1.5 md:py-2 rounded-full transition text-xs md:text-base"
-        >
-          <ChevronLeft size={18} className="md:w-5 md:h-5" /> Quay lại
-        </button>
-      </div>
-
+    <div className="fixed inset-0 z-[100] bg-[#141414] overflow-y-auto pt-28 md:pt-20">
       {/* Khung video nằm ngay bên dưới thanh header */}
       <div className="w-full h-[35vh] sm:h-[50vh] lg:h-[80vh] bg-black">
         <iframe
@@ -730,37 +720,8 @@ useEffect(() => {
   }, [movies]);
 
   useEffect(() => {
-    if (!useCloud) {
-      localStorage.setItem('youflix_movies_v2', JSON.stringify(movies));
-      return;
-    }
-
-    const initAuth = async () => {
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-      } catch (error) {
-        console.error("Lỗi xác thực:", error);
-      }
-    };
-
-    const saveMovieToCloud = async (newMovie) => {
-    if (db) {
-      try {
-        const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', newMovie.id);
-        await setDoc(movieDocRef, newMovie);
-      } catch (err) {
-        console.error("Lỗi lưu phim lên Firestore:", err);
-      }
-    }
-  };
-    initAuth();
-    
-    const unsubscribe = onAuthStateChanged(auth, setUser);
-    return () => unsubscribe();
+    if (useCloud) return;
+    localStorage.setItem('youflix_movies_v2', JSON.stringify(movies));
   }, [movies]);
 
   useEffect(() => {
@@ -917,7 +878,6 @@ useEffect(() => {
         <DetailView 
           movie={selectedMovie} 
           allMovies={movies}
-          onClose={() => setSelectedMovie(null)} 
           onMovieClick={setSelectedMovie}
           onDelete={handleDeleteRequest}
         />
