@@ -292,24 +292,17 @@ function MovieRow({ title, movies, onMovieClick, onDeleteMovie, onDeleteCategory
   );
 }
 
-// CẬP NHẬT HOÀN TOÀN: DetailView được tinh chỉnh logic Native Playlist để luôn chạy đúng tập được click
+// CẬP NHẬT: Gỡ Native Playlist khỏi Iframe, xử lý Auto-Next 100% bằng React
 function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniPlayer, onToggleMiniPlayer }) {
   const [autoNext, setAutoNext] = useState(true);
   
-  // State hiển thị thông tin phim trên giao diện (Độc lập với Iframe đang chạy ngầm)
-  const [displayMovie, setDisplayMovie] = useState(movie);
-  
-  useEffect(() => {
-    setDisplayMovie(movie); // Đồng bộ lại giao diện ngay khi người dùng chủ động click tập phim mới
-  }, [movie.id]);
-
   const iframeRef = useRef(null);
   const similarRowRef = useRef(null);
 
   // 1. TÍNH TOÁN DANH SÁCH GỐC (Chuẩn thứ tự tập)
   const fullList = useMemo(() => {
     if (movie.playlistId) {
-      // Nếu là Playlist: Sắp xếp theo đúng thứ tự tác giả đã tạo (playlistIndex)
+      // Nếu là Playlist: Sắp xếp theo đúng thứ tự tác giả đã tạo
       return allMovies
         .filter(m => m.playlistId === movie.playlistId)
         .sort((a,b) => (a.playlistIndex || 0) - (b.playlistIndex || 0));
@@ -320,31 +313,25 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
       .sort((a,b) => a.id.localeCompare(b.id)); 
   }, [movie, allMovies]);
 
-  // 2. SINH HÀNG ĐỢI CHO YOUTUBE NATIVE PLAYLIST (CHÌA KHÓA VƯỢT LỖI)
-  const iframeSrc = useMemo(() => {
-    // Tìm chính xác vị trí của video vừa được click trong danh sách gốc
-    const currentIndex = fullList.findIndex(m => m.id === movie.id);
-    let nextVideoIds = '';
-    
-    if (autoNext) {
-      // Bắt đầu xếp hàng đợi từ NGAY LIỀN KỀ phía sau video đang click
-      const nextVideos = fullList.slice(currentIndex + 1);
-      // Nếu chạy hết list, vòng lặp lại từ đầu cho tới sát video hiện tại
-      const prevVideos = fullList.slice(0, currentIndex);
-      const queue = [...nextVideos, ...prevVideos];
-      
-      // Giới hạn 40 tập để URL không bị quá dài dẫn đến lỗi kết nối
-      nextVideoIds = queue.map(m => m.videoId).slice(0, 40).join(',');
-    }
 
-    // Youtube sẽ luôn Load video đầu tiên trong param 'src', sau đó mới next ngầm sang list 'playlist'
-    return `https://www.youtube.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_load_policy=0&iv_load_policy=3&cc_lang_pref=en&modestbranding=1&playsinline=1&showinfo=0&controls=1&fs=1&disablekb=0&enablejsapi=1&origin=${window.location.origin}${nextVideoIds ? `&playlist=${nextVideoIds}` : ''}`;
-  }, [movie.id, movie.videoId, fullList, autoNext]); // Chỉ sinh lại Iframe khi tập Gốc thay đổi hoặc đổi cài đặt
+  // 2. TÌM VIDEO TIẾP THEO ĐỂ PHÁT KHI KẾT THÚC
+  const nextMovieForAutoPlay = useMemo(() => {
+    const currentIndex = fullList.findIndex(m => m.id === movie.id);
+    if (currentIndex >= 0 && currentIndex < fullList.length - 1) {
+      return fullList[currentIndex + 1]; // Phát tập liền kề phía sau
+    }
+    // Nếu đang ở tập cuối cùng, quay lại tập đầu tiên của danh sách
+    return fullList[0];
+  }, [fullList, movie.id]);
+
+  // CHỈ DÙNG 1 VIDEO ĐƠN TRONG IFRAME, ĐỂ LUÔN PHÁT ĐÚNG VIDEO NGƯỜI DÙNG CHỌN
+  const iframeSrc = `https://www.youtube.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_load_policy=0&iv_load_policy=3&cc_lang_pref=en&modestbranding=1&playsinline=1&showinfo=0&controls=1&fs=1&disablekb=0&enablejsapi=1&origin=${window.location.origin}`;
+
 
   // 3. DANH SÁCH UI NỘI DUNG TƯƠNG TỰ BÊN DƯỚI (Loại bỏ tập đang phát)
   const similarMoviesUI = useMemo(() => {
-    return fullList.filter(m => m.id !== displayMovie.id);
-  }, [fullList, displayMovie]);
+    return fullList.filter(m => m.id !== movie.id);
+  }, [fullList, movie]);
 
   const handleScroll = (direction) => {
     if (similarRowRef.current) {
@@ -364,28 +351,25 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
     return () => { document.body.style.overflow = 'auto'; };
   }, [isMiniPlayer]);
 
-  // 4. LẮNG NGHE YOUTUBE NEXT NGẦM ĐỂ ĐỔI TEXT GIAO DIỆN
+  // 4. LẮNG NGHE YOUTUBE NEXT NGẦM ĐỂ TỰ CHUYỂN BÀI
   useEffect(() => {
     const handleMessage = (e) => {
       if (!e.origin.includes('youtube.com') && !e.origin.includes('youtube-nocookie.com')) return;
       try {
         const data = JSON.parse(e.data);
-        if (data.event === 'infoDelivery' && data.info?.videoData?.video_id) {
-          const currentPlayingId = data.info.videoData.video_id;
-          
-          if (currentPlayingId !== displayMovie.videoId) {
-            const nextMeta = allMovies.find(m => m.videoId === currentPlayingId);
-            if (nextMeta) {
-              setDisplayMovie(nextMeta); // Chữ đổi ngay lập tức, nhưng Iframe không bị xoá mất
-            }
-          }
+        const isEnded = (data.event === 'onStateChange' && data.info === 0) || 
+                        (data.event === 'infoDelivery' && data.info?.playerState === 0);
+
+        if (isEnded && autoNext && nextMovieForAutoPlay) {
+          window.scrollTo(0, 0);
+          onMovieClick(nextMovieForAutoPlay); // React tự đổi state, iframe sẽ tự reload video mới
         }
       } catch (err) {}
     };
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [displayMovie.videoId, allMovies]);
+  }, [autoNext, nextMovieForAutoPlay, onMovieClick]);
 
   return (
     <div className={isMiniPlayer 
@@ -420,7 +404,7 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
         >
           <div className="flex items-center gap-2 overflow-hidden w-full pr-2">
             <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0"></div>
-            <h3 className="text-xs font-bold text-white truncate">{displayMovie.title}</h3>
+            <h3 className="text-xs font-bold text-white truncate">{movie.title}</h3>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button onClick={(e) => { e.stopPropagation(); onToggleMiniPlayer(); }} className="text-zinc-300 hover:text-white p-1"><Maximize2 size={14} /></button>
@@ -438,7 +422,7 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
             }
           }}
           src={iframeSrc}
-          title={displayMovie.title}
+          title={movie.title}
           className={`w-full h-full border-0 ${isMiniPlayer ? "pointer-events-none" : ""}`}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowFullScreen={!isMiniPlayer}
@@ -450,12 +434,12 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
           <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-3 md:mb-4">
             <span className="text-green-500 font-bold text-sm md:text-lg">Độ phân giải cao</span>
             <span className="border border-zinc-500 text-zinc-300 text-xs md:text-sm px-1.5 md:px-2 py-0.5 rounded-sm">4K</span>
-            {displayMovie.isFull && (
+            {movie.isFull && (
               <span className="bg-red-600 text-white font-bold text-xs md:text-sm px-1.5 md:px-2 py-0.5 rounded-sm uppercase flex items-center gap-1">
                 <CheckCircle size={14}/> Đã Full
               </span>
             )}
-            <span className="bg-zinc-800 text-white text-xs md:text-sm px-2 md:px-3 py-1 rounded-full">{displayMovie.category}</span>
+            <span className="bg-zinc-800 text-white text-xs md:text-sm px-2 md:px-3 py-1 rounded-full">{movie.category}</span>
             
             <label className="flex items-center gap-2 ml-auto text-xs md:text-sm text-zinc-300 cursor-pointer bg-zinc-800/50 hover:bg-zinc-700 px-3 py-1.5 rounded-full transition border border-zinc-700">
               <input 
@@ -467,13 +451,13 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
               Tự động phát tập tiếp theo
             </label>
           </div>
-          <h1 className="text-2xl md:text-5xl font-bold text-white mb-3 md:mb-6">{displayMovie.title}</h1>
+          <h1 className="text-2xl md:text-5xl font-bold text-white mb-3 md:mb-6">{movie.title}</h1>
           <p className="text-sm md:text-lg text-zinc-300 leading-relaxed mb-6 md:mb-8">
-            {displayMovie.description || "Chưa có thông tin mô tả chi tiết cho video này."}
+            {movie.description || "Chưa có thông tin mô tả chi tiết cho video này."}
           </p>
           <div className="flex flex-wrap gap-4 items-center">
             <a 
-              href={`https://www.youtube.com/watch?v=${displayMovie.videoId}`}
+              href={`https://www.youtube.com/watch?v=${movie.videoId}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 md:gap-2 text-zinc-400 hover:text-white transition text-sm md:text-base"
@@ -481,7 +465,7 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
               Mở trên YouTube
             </a>
             <button 
-              onClick={() => onDelete(displayMovie.id)}
+              onClick={() => onDelete(movie.id)}
               className="inline-flex items-center gap-1.5 md:gap-2 text-red-500 hover:text-red-400 transition text-sm md:text-base"
             >
               <Trash2 size={16} className="md:w-[18px] md:h-[18px]" /> Xóa phim này
@@ -491,7 +475,7 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
         
         <div className="w-full relative group">
           <h3 className="text-lg md:text-xl font-bold text-white mb-4 md:mb-6">
-            {displayMovie.playlistId ? 'Danh sách phát (Playlist)' : 'Nội dung tương tự'}
+            {movie.playlistId ? 'Danh sách phát (Playlist)' : 'Nội dung tương tự'}
           </h3>
           <div className="relative w-full overflow-hidden">
             {similarMoviesUI.length > 0 && (
@@ -1089,7 +1073,8 @@ export default function App() {
           ) : (
             <div className="px-4 md:px-8">
               <div className="flex flex-wrap items-center justify-between gap-4 mb-4 md:mb-6">
-                <h2 className="text-xl md:text-2xl font-bold flex flex-wrap items-center gap-2 md:gap-3">
+                {/* SỬA: ĐÃ BỔ SUNG THÊM CLASS text-white ĐỂ KHÔNG BỊ CHÌM VÀO NỀN ĐEN */}
+                <h2 className="text-xl md:text-2xl font-bold text-white flex flex-wrap items-center gap-2 md:gap-3">
                   {searchQuery ? `Kết quả tìm kiếm cho: "${searchQuery}"` : currentCategory}
                   {showOnlyFull && <span className="bg-red-600 text-white text-[10px] md:text-xs px-2 py-1 rounded uppercase tracking-wider">Đã Full</span>}
                 </h2>
