@@ -67,7 +67,7 @@ const detectIsFull = (title, description = '') => {
   const keywords = ['trọn bộ', 'tập cuối', 'end', 'hoàn tất'];
   const textToScan = (title + ' ' + description).toLowerCase();
   
-  const fullRegex = /full(?!\s*(version|part|phần|tập|season|mùa|ss|-)\s*\d+)(?!\s+\d{1,2}\b)/;
+  const fullRegex = /full(?!\s*(version|part|phần|tập|season|mùa|ss|p|pt|-)\s*\d+)(?!\s+\d{1,2}\b)/;
   
   // 2. Kết hợp kiểm tra bằng Regex và kiểm tra mảng từ khóa
   return fullRegex.test(textToScan) || keywords.some(kw => textToScan.includes(kw));
