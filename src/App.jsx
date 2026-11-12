@@ -169,7 +169,7 @@ function Hero({ movie, onPlay }) {
           <span className="text-green-500 font-bold text-sm">98% Phù hợp</span>
           <span className="border border-zinc-500 text-zinc-300 text-xs px-2 py-0.5 rounded-sm">4K</span>
           {movie.isFull && <span className="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider">Đã Full</span>}
-          <span className="text-left text-base font-semibold text-zinc-300">{movie.category}</span>
+          <span className="text-zinc-300 text-sm">{movie.category}</span>
         </div>
         <h2 className="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight shadow-sm">
           {movie.title}
@@ -242,7 +242,7 @@ function MovieRow({ title, movies, onMovieClick, onDeleteMovie }) {
       <h2 className="text-xl font-bold text-white mb-4 px-8">{title}</h2>
       {/* Khung hiển thị phim dạng cuộn dọc, flex-wrap, giới hạn chiều cao 2 dòng */}
       <div 
-        className="flex flex-wrap gap-4 pb-4 px-8 max-h-[350px] overflow-y-auto scroll-smooth"
+        className="flex flex-wrap gap-4 pb-4 px-8 max-h-[350px] overflow-x-auto scroll-smooth"
         style={{ scrollbarWidth: 'thin' }}
       >
         {movies.map(movie => (
