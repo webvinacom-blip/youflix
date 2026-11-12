@@ -286,20 +286,14 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete }) {
   };
 
   return (
-    // SỬA 1: Đổi z-[100] thành z-[90] để nằm dưới thanh Navbar (z-[120]), giúp Navbar hiện lên trên cùng
-    <div className="fixed inset-0 z-[90] bg-[#141414] overflow-y-auto">
-      
-      {/* SỬA 2: Đổi top-4 md:top-6 thành top-20 md:top-24 để nút Quay lại nằm ngay dưới thanh Navbar */}
+    <div className="fixed inset-0 z-[100] bg-[#141414] overflow-y-auto">
       <button 
         onClick={onClose}
-        className="fixed top-20 md:top-24 left-4 md:left-6 z-[110] flex items-center gap-1 md:gap-2 text-white bg-black/50 hover:bg-black/80 px-3 md:px-4 py-1.5 md:py-2 rounded-full backdrop-blur transition text-xs md:text-base shadow-lg"
+        className="fixed top-4 md:top-6 left-4 md:left-6 z-[110] flex items-center gap-1 md:gap-2 text-white bg-black/50 hover:bg-black/80 px-3 md:px-4 py-1.5 md:py-2 rounded-full backdrop-blur transition text-xs md:text-base"
       >
         <ChevronLeft size={18} className="md:w-5 md:h-5" /> Quay lại
       </button>
       
-      {/* SỬA 3: Thêm khoảng đệm chiều cao ở đây để đẩy khung video xuống đúng vị trí, không bị dính đè vào menu */}
-      <div className="h-16 md:h-20 w-full"></div>
-
       <div className="w-full h-[35vh] sm:h-[50vh] lg:h-[80vh] bg-black">
         <iframe 
           src={`https://www.youtube.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_load_policy=0&iv_load_policy=3&cc_lang_pref=en&modestbranding=1&playsinline=1&showinfo=0&controls=1&fs=1&disablekb=0&enablejsapi=1&origin=${window.location.origin}`}
