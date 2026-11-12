@@ -97,18 +97,25 @@ function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel }) {
   );
 }
 
-function Navbar({ categories, currentCategory, setCategory, searchQuery, setSearchQuery, onOpenAdd, showOnlyFull, setShowOnlyFull }) {
+function Navbar({ categories, currentCategory, setCategory, searchQuery, setSearchQuery, onOpenAdd, showOnlyFull, setShowOnlyFull, onNavigate }) {
+  // Hàm xử lý chung khi bấm chuyển kênh
+  const handleNavClick = (cat) => {
+    setCategory(cat);
+    setSearchQuery(''); // Xóa text tìm kiếm (nếu có) để về đúng kênh
+    if (onNavigate) onNavigate(); // Đóng màn hình xem phim (nếu đang mở)
+  };
+
   return (
     <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/90 to-transparent pb-3 md:pb-4 pt-3 md:pt-4 px-4 md:px-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-4 transition-all duration-300">
       <div className="flex items-center gap-4 md:gap-8 w-full md:w-auto overflow-hidden">
-        <h1 className="text-red-600 font-black text-2xl md:text-3xl tracking-tighter cursor-pointer shrink-0" onClick={() => setCategory('Tất cả')}>
+        <h1 className="text-red-600 font-black text-2xl md:text-3xl tracking-tighter cursor-pointer shrink-0" onClick={() => handleNavClick('Tất cả')}>
           YOUFLIX
         </h1>
         <div className="flex gap-3 md:gap-4 overflow-x-auto no-scrollbar whitespace-nowrap scroll-smooth pb-1 md:pb-0">
           {categories.map(cat => (
             <button 
               key={cat}
-              onClick={() => setCategory(cat)}
+              onClick={() => handleNavClick(cat)}
               className={`text-xs md:text-sm font-medium transition shrink-0 ${currentCategory === cat ? 'text-white' : 'text-zinc-300 hover:text-white'}`}
             >
               {cat}
@@ -148,54 +155,6 @@ function Navbar({ categories, currentCategory, setCategory, searchQuery, setSear
         </button>
       </div>
     </nav>
-  );
-}
-
-function Hero({ movie, onPlay }) {
-  if (!movie) return null;
-  
-  return (
-    <div className="relative w-full h-[60vh] md:h-[70vh] min-h-[400px] md:min-h-[500px] mb-6 md:mb-8">
-      <div className="absolute inset-0 w-full h-full">
-        <img 
-          src={getHighResThumbnail(movie.videoId)} 
-          alt={movie.title}
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#141414]/90 md:from-black/80 via-black/40 to-transparent"></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/40 md:via-transparent to-transparent"></div>
-      </div>
-      
-      <div className="absolute bottom-[10%] md:bottom-[15%] left-4 md:left-16 max-w-2xl px-4 md:px-0">
-        <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-2 md:mb-4">
-          <span className="text-green-500 font-bold text-xs md:text-sm">98% Phù hợp</span>
-          <span className="border border-zinc-500 text-zinc-300 text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-sm">4K</span>
-          {movie.isFull && <span className="bg-red-600 text-white text-[10px] md:text-xs font-bold px-1.5 md:px-2 py-0.5 rounded-sm uppercase tracking-wider">Đã Full</span>}
-          <span className="text-zinc-300 text-xs md:text-sm">{movie.category}</span>
-        </div>
-        <h2 className="text-3xl md:text-6xl font-bold text-white mb-2 md:mb-4 leading-tight shadow-sm line-clamp-2">
-          {movie.title}
-        </h2>
-        <p className="text-sm md:text-lg text-zinc-300 mb-4 md:mb-8 line-clamp-3 max-w-xl text-shadow">
-          {movie.description || "Một tuyệt tác đáng xem trên nền tảng của chúng tôi. Hãy tận hưởng những giây phút giải trí tuyệt vời."}
-        </p>
-        
-        <div className="flex gap-2 md:gap-4">
-          <button 
-            onClick={() => onPlay(movie)}
-            className="flex items-center gap-1 md:gap-2 bg-white text-black px-4 md:px-8 py-1.5 md:py-2.5 rounded hover:bg-white/80 transition font-bold text-sm md:text-lg"
-          >
-            <Play size={18} className="md:w-6 md:h-6" fill="currentColor" /> Phát ngay
-          </button>
-          <button 
-            onClick={() => onPlay(movie)}
-            className="flex items-center gap-1 md:gap-2 bg-zinc-500/50 text-white px-4 md:px-8 py-1.5 md:py-2.5 rounded hover:bg-zinc-500/70 transition font-bold text-sm md:text-lg backdrop-blur-sm"
-          >
-            <Info size={18} className="md:w-6 md:h-6" /> Chi tiết
-          </button>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -292,23 +251,25 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete }) {
   };
 
   return (
-    // SỬA CHUẨN: Hạ z-index xuống 90 để không đè lên Navbar (z-50 của bạn).
     <div className="fixed inset-0 z-[40] bg-[#141414] overflow-y-auto">
       
-      {/* SỬA CHUẨN: Đưa nút Quay lại xuống dưới Navbar */}
-      <button 
-        onClick={onClose}
-        className="fixed top-20 md:top-24 left-4 md:left-6 z-[45] flex items-center gap-1 md:gap-2 text-white bg-black/50 hover:bg-black/80 px-3 md:px-4 py-1.5 md:py-2 rounded-full backdrop-blur transition text-xs md:text-base shadow-lg"
-      >
-        <ChevronLeft size={18} className="md:w-5 md:h-5" /> Quay lại
-      </button>
-      
-      {/* Thêm khoảng đệm để video không bị Navbar đè lên */}
-      <div className="h-16 md:h-20 w-full"></div>
+      {/* Khoảng trống phía trên nhường chỗ cho Navbar hiển thị */}
+      <div className="w-full h-16 md:h-20 shrink-0"></div>
 
+      {/* Khu vực chứa nút Quay lại (Nằm độc lập trên video, sát lề trái) */}
+      <div className="w-full px-4 md:px-6 py-2 md:py-3 flex items-start">
+        <button 
+          onClick={onClose}
+          className="flex items-center gap-1.5 md:gap-2 text-white bg-zinc-800 hover:bg-zinc-700 px-3 md:px-4 py-1.5 md:py-2 rounded-full transition text-xs md:text-sm font-medium border border-zinc-700 shadow-md cursor-pointer"
+        >
+          <ChevronLeft size={18} className="md:w-5 md:h-5" /> Quay lại
+        </button>
+      </div>
+
+      {/* Khung chiếu video (Tự động được đẩy xuống dưới nút Quay lại, không bao giờ bị đè) */}
       <div className="w-full h-[35vh] sm:h-[50vh] lg:h-[80vh] bg-black">
         <iframe 
-          src={`https://www.youtube.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_load_policy=0&iv_load_policy=3&cc_lang_pref=en&modestbranding=1&playsinline=1&showinfo=0&controls=1&fs=1&disablekb=0&enablejsapi=1&origin=${window.location.origin}`}
+          src={`https://www.youtube.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_load_policy=0&iv_load_policy=3&cc_lang_pref=none&modestbranding=1&playsinline=1&showinfo=0&controls=1&fs=1&disablekb=0&enablejsapi=1&origin=${window.location.origin}`}
           title={movie.title}
           className="w-full h-full border-0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -316,6 +277,7 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete }) {
         ></iframe>
       </div>
 
+      {/* Phần thông tin chi tiết */}
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-12 flex flex-col gap-8 md:gap-12">
         <div>
           <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-3 md:mb-4">
@@ -350,6 +312,7 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete }) {
           </div>
         </div>
         
+        {/* Danh sách phim tương tự */}
         <div className="w-full relative group">
           <h3 className="text-lg md:text-xl font-bold text-white mb-4 md:mb-6">Nội dung tương tự</h3>
           <div className="relative w-full overflow-hidden">
