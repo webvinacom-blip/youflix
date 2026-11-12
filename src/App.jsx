@@ -111,7 +111,6 @@ function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel }) {
   );
 }
 
-// CẬP NHẬT NAVBAR: Logo to hơn, Menu tự động xuống dòng, không bị rớt chữ
 function Navbar({ categories, currentCategory, setCategory, searchQuery, setSearchQuery, onOpenAdd, showOnlyFull, setShowOnlyFull, onNavigate }) {
   const handleNavClick = (cat) => {
     setCategory(cat);
@@ -123,14 +122,11 @@ function Navbar({ categories, currentCategory, setCategory, searchQuery, setSear
     <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/95 via-black/80 to-transparent pb-8 pt-4 px-4 md:px-8 transition-all duration-300 pointer-events-none">
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 pointer-events-auto">
         
-        {/* Nhóm Logo và Menu Kênh */}
         <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-8 flex-1">
-          {/* SỬA CHỮ: Kích thước logo to hơn (text-4xl md:text-5xl) */}
           <h1 className="text-red-600 font-black text-4xl md:text-5xl tracking-tighter cursor-pointer shrink-0 drop-shadow-md" onClick={() => handleNavClick('Tất cả')}>
             YOUFLIX
           </h1>
           
-          {/* SỬA CHỮ: Bỏ cuộn ngang, dùng flex-wrap để các mục tự rớt xuống dòng khi quá dài */}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 lg:gap-x-6">
             {categories.map(cat => (
               <button 
@@ -144,7 +140,6 @@ function Navbar({ categories, currentCategory, setCategory, searchQuery, setSear
           </div>
         </div>
         
-        {/* Nhóm Công cụ Tìm kiếm, Lọc, Thêm Phim */}
         <div className="flex flex-wrap md:flex-nowrap items-center gap-3 md:gap-4 shrink-0 mt-2 md:mt-0">
           <label className="flex items-center gap-1.5 md:gap-2 cursor-pointer text-xs md:text-sm font-medium text-zinc-300 hover:text-white transition bg-black/60 px-3 py-1.5 rounded-full border border-zinc-700 backdrop-blur-sm">
             <input 
@@ -346,13 +341,19 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
     }
   };
 
+  // KHÓA THANH CUỘN CỦA TRANG CHỦ ĐỂ LOẠI BỎ THANH SCROLLBAR THỨ 2
   useEffect(() => {
     if (!isMiniPlayer) {
+      document.documentElement.style.overflow = 'hidden';
       document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'auto';
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
     }
-    return () => { document.body.style.overflow = 'auto'; };
+    return () => { 
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = ''; 
+    };
   }, [isMiniPlayer]);
 
   useEffect(() => {
@@ -377,22 +378,24 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
   return (
     <div className={isMiniPlayer 
       ? "fixed bottom-4 right-4 md:bottom-8 md:right-8 w-72 sm:w-80 md:w-[400px] z-[200] bg-zinc-900 rounded-xl shadow-2xl border border-zinc-700/50 overflow-hidden flex flex-col transition-all duration-300 ease-in-out hover:shadow-black/80"
-      : "fixed inset-0 z-[40] bg-[#141414] overflow-y-auto transition-all duration-300 ease-in-out"}>
+      : "fixed inset-0 z-[40] bg-[#141414] overflow-y-auto overflow-x-hidden transition-all duration-300 ease-in-out"}>
       
+      {/* KHOẢNG ĐỆM PHÍA TRÊN */}
       {!isMiniPlayer && <div className="w-full h-24 md:h-32 shrink-0"></div>}
       
+      {/* HEADER BÁM DÍNH (STICKY) KHI CUỘN */}
       {!isMiniPlayer && (
-        <div className="relative z-10 w-full px-4 md:px-8 py-4 flex items-center justify-between">
+        <div className="sticky top-24 md:top-32 z-[60] w-full px-4 md:px-8 py-3 flex items-center justify-between bg-[#141414]/95 backdrop-blur-md border-y border-zinc-800/80 shadow-xl transition-all">
           <button 
             onClick={onClose}
-            className="flex items-center gap-2 text-white bg-zinc-800/80 hover:bg-zinc-700 px-4 md:px-5 py-2 md:py-2.5 rounded-full transition text-sm font-semibold border border-zinc-600 shadow-lg cursor-pointer backdrop-blur-md"
+            className="flex items-center gap-2 text-white bg-zinc-800/80 hover:bg-zinc-700 px-4 md:px-5 py-2 md:py-2.5 rounded-full transition text-sm font-semibold border border-zinc-600 shadow-lg cursor-pointer pointer-events-auto"
           >
             <ChevronLeft size={20} /> Quay lại
           </button>
           
           <button 
             onClick={onToggleMiniPlayer}
-            className="flex items-center gap-2 text-white bg-blue-600/90 hover:bg-blue-600 px-4 md:px-5 py-2 md:py-2.5 rounded-full transition text-sm font-semibold shadow-lg shadow-blue-900/30 cursor-pointer backdrop-blur-md"
+            className="flex items-center gap-2 text-white bg-blue-600/90 hover:bg-blue-600 px-4 md:px-5 py-2 md:py-2.5 rounded-full transition text-sm font-semibold shadow-lg shadow-blue-900/30 cursor-pointer pointer-events-auto"
           >
             <Minimize2 size={18} /> Thu nhỏ
           </button>
