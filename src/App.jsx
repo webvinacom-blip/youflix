@@ -200,13 +200,13 @@ function Hero({ movie, onPlay }) {
 function MovieCard({ movie, onClick, onDelete }) {
   return (
     <div 
-      className="group/card relative flex-none w-64 aspect-video rounded-md overflow-hidden cursor-pointer transition-all duration-300 hover:scale-105 hover:z-20 bg-zinc-800"
+      className="group/card relative w-full h-full aspect-video rounded-md overflow-hidden cursor-pointer transition-all duration-300 hover:scale-105 snap-start"
       onClick={() => onClick(movie)}
     >
       <img 
         src={getThumbnail(movie.videoId)} 
-        alt={movie.title}
-        className="w-full h-full object-cover"
+        alt={movie.title} 
+        className="w-full h-full object-cover" 
         loading="lazy"
       />
       {movie.isFull && (
@@ -238,11 +238,12 @@ function MovieRow({ title, movies, onMovieClick, onDeleteMovie }) {
   if (movies.length === 0) return null;
   
   return (
-    <div className="mb-8 relative">
+    <div className="mb-8 relative w-full min-w-0 max-w-full">
       <h2 className="text-xl font-bold text-white mb-4 px-8">{title}</h2>
-      {/* Khung hiển thị phim dạng cuộn dọc, flex-wrap, giới hạn chiều cao 2 dòng */}
+      
+      {/* Khung hiển thị phim dạng cuộn ngang 2 dòng */}
       <div 
-        className="flex flex-wrap gap-4 pb-4 px-8 max-h-[350px] overflow-x-auto scroll-smooth"
+        className="grid grid-rows-2 grid-flow-col auto-cols-[160px] md:auto-cols-[200px] gap-4 pb-4 px-8 overflow-x-auto scroll-smooth w-full snap-x snap-mandatory"
         style={{ scrollbarWidth: 'thin' }}
       >
         {movies.map(movie => (
