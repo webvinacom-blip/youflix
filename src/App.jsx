@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from 'firebase/firestore';
@@ -100,7 +100,6 @@ function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel }) {
   );
 }
 
-// SỬA: Thêm pointer-events-none cho lớp nền Navbar và pointer-events-auto cho các nút bấm bên trong
 function Navbar({ categories, currentCategory, setCategory, searchQuery, setSearchQuery, onOpenAdd, showOnlyFull, setShowOnlyFull, onNavigate }) {
   const handleNavClick = (cat) => {
     setCategory(cat);
@@ -283,13 +282,17 @@ function MovieRow({ title, movies, onMovieClick, onDeleteMovie, onDeleteCategory
 }
 
 function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniPlayer, onToggleMiniPlayer }) {
+  // Trạng thái Bật/Tắt tự động Next Video
+  const [autoNext, setAutoNext] = useState(true);
+  const iframeRef = useRef(null);
+
   const similarMovies = useMemo(() => {
     return allMovies
       .filter(m => m.category === movie.category && m.id !== movie.id)
       .slice(0, 10);
   }, [movie, allMovies]);
 
-  const similarRowRef = React.useRef(null);
+  const similarRowRef = useRef(null);
 
   const handleScroll = (direction) => {
     if (similarRowRef.current) {
@@ -300,6 +303,7 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
     }
   };
 
+  // Quản lý scroll khi bật Mini Player
   useEffect(() => {
     if (!isMiniPlayer) {
       document.body.style.overflow = 'hidden';
@@ -309,13 +313,38 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
     return () => { document.body.style.overflow = 'auto'; };
   }, [isMiniPlayer]);
 
+  // Lắng nghe sự kiện YouTube iframe để Tự động Next video
+  useEffect(() => {
+    const handleMessage = (e) => {
+      // Đảm bảo tin nhắn đến từ iframe của youtube
+      if (!e.origin.includes('youtube.com') && !e.origin.includes('youtube-nocookie.com')) return;
+      
+      try {
+        const data = JSON.parse(e.data);
+        
+        // Kiểm tra mã sự kiện khi video kết thúc (PlayerState === 0)
+        const isEnded = (data.event === 'onStateChange' && data.info === 0) || 
+                        (data.event === 'infoDelivery' && data.info?.playerState === 0);
+
+        if (isEnded && autoNext && similarMovies.length > 0) {
+          // Video đã chạy xong -> tự động cuộn trang lên đầu và phát phim tiếp theo
+          window.scrollTo(0, 0);
+          onMovieClick(similarMovies[0]);
+        }
+      } catch (err) {
+        // Bỏ qua các tin nhắn không phải JSON hoặc lỗi phân tích
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [autoNext, similarMovies, onMovieClick]);
+
   return (
     <div className={isMiniPlayer 
       ? "fixed bottom-4 right-4 md:bottom-6 md:right-6 w-72 sm:w-80 md:w-96 z-[200] bg-zinc-900 rounded-lg shadow-2xl border border-zinc-700 overflow-hidden flex flex-col transition-all duration-300 ease-in-out"
       : "fixed inset-0 z-[40] bg-[#141414] overflow-y-auto transition-all duration-300 ease-in-out"}>
       
-      {/* 1. Header khi ở chế độ BÌNH THƯỜNG (FULL) */}
-      {/* SỬA: Tăng khoảng đệm để đảm bảo không dính vào Navbar, và relative z-10 để ăn click */}
       {!isMiniPlayer && <div className="w-full h-20 md:h-24 shrink-0"></div>}
       
       {!isMiniPlayer && (
@@ -336,7 +365,6 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
         </div>
       )}
 
-      {/* 2. Header khi ở chế độ THU NHỎ (MINI PLAYER) */}
       {isMiniPlayer && (
         <div 
           className="flex items-center justify-between px-3 py-2 bg-zinc-800/90 backdrop-blur cursor-pointer hover:bg-zinc-700 transition" 
@@ -354,10 +382,16 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
         </div>
       )}
 
-      {/* 3. Khung Video */}
       <div className={isMiniPlayer ? "w-full aspect-video bg-black" : "w-full h-[35vh] sm:h-[50vh] lg:h-[80vh] bg-black"}>
         <iframe 
-          src={`https://www.youtube.com/embed/${movie.videoId}?autoplay=1&controls=1&rel=0&playsinline=1&iv_load_policy=3&cc_load_policy=0&enablejsapi=1&origin=${window.location.origin}`}
+          ref={iframeRef}
+          onLoad={(e) => {
+            // Gửi tin nhắn kích hoạt lắng nghe sự kiện tới YouTube Player
+            if (e.target && e.target.contentWindow) {
+              e.target.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), '*');
+            }
+          }}
+          src={`https://www.youtube.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_load_policy=0&iv_load_policy=3&cc_lang_pref=none&hl=vm&modestbranding=1&playsinline=1&showinfo=0&controls=1&fs=1&disablekb=0&enablejsapi=1&origin=${window.location.origin}`}
           title={movie.title}
           className={`w-full h-full border-0 ${isMiniPlayer ? "pointer-events-none" : ""}`}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -365,7 +399,6 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
         ></iframe>
       </div>
 
-      {/* 4. Nội dung chi tiết */}
       <div className={isMiniPlayer ? "hidden" : "max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-12 flex flex-col gap-8 md:gap-12"}>
         <div>
           <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-3 md:mb-4">
@@ -377,6 +410,17 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
               </span>
             )}
             <span className="bg-zinc-800 text-white text-xs md:text-sm px-2 md:px-3 py-1 rounded-full">{movie.category}</span>
+            
+            {/* TÙY CHỌN BẬT TẮT AUTO-NEXT */}
+            <label className="flex items-center gap-2 ml-auto text-xs md:text-sm text-zinc-300 cursor-pointer bg-zinc-800/50 hover:bg-zinc-700 px-3 py-1.5 rounded-full transition border border-zinc-700">
+              <input 
+                type="checkbox" 
+                checked={autoNext} 
+                onChange={(e) => setAutoNext(e.target.checked)}
+                className="w-3.5 h-3.5 accent-red-600 cursor-pointer"
+              />
+              Tự động phát tập tiếp theo
+            </label>
           </div>
           <h1 className="text-2xl md:text-5xl font-bold text-white mb-3 md:mb-6">{movie.title}</h1>
           <p className="text-sm md:text-lg text-zinc-300 leading-relaxed mb-6 md:mb-8">
