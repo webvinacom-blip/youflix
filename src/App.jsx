@@ -64,7 +64,6 @@ const extractYoutubeId = (url) => {
   return (match && match[7].length === 11) ? match[7] : false;
 };
 
-// HÀM MỚI: Trích xuất ID Playlist từ URL hoặc lấy luôn chuỗi nếu người dùng nhập ID
 const extractPlaylistId = (urlOrId) => {
   if (!urlOrId) return '';
   try {
@@ -72,9 +71,7 @@ const extractPlaylistId = (urlOrId) => {
       const urlObj = new URL(urlOrId);
       return urlObj.searchParams.get('list') || urlOrId;
     }
-  } catch (e) {
-    // Không phải URL hợp lệ, giả định đó là Playlist ID
-  }
+  } catch (e) {}
   return urlOrId;
 };
 
@@ -299,11 +296,30 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
   const [autoNext, setAutoNext] = useState(true);
   const iframeRef = useRef(null);
 
+  // LOGIC THÔNG MINH CHO PLAYLIST VÀ NỘI DUNG TƯƠNG TỰ
   const similarMovies = useMemo(() => {
+    // 1. Nếu phim này thuộc 1 Playlist rõ ràng -> Hiện TOÀN BỘ phim trong Playlist, sắp xếp đúng thứ tự
+    if (movie.playlistId) {
+      return allMovies
+        .filter(m => m.playlistId === movie.playlistId && m.id !== movie.id)
+        .sort((a, b) => (a.playlistIndex || 0) - (b.playlistIndex || 0));
+    }
+    // 2. Nếu chỉ là phim lẻ -> Hiện tối đa 15 phim cùng thể loại
     return allMovies
       .filter(m => m.category === movie.category && m.id !== movie.id)
-      .slice(0, 10);
+      .slice(0, 15);
   }, [movie, allMovies]);
+
+  // XÁC ĐỊNH VIDEO TIẾP THEO ĐỂ AUTO-NEXT
+  const nextMovieForAutoPlay = useMemo(() => {
+    // Nếu là Playlist, tìm tập liền kề phía sau
+    if (movie.playlistId && movie.playlistIndex !== undefined) {
+      const nextInPlaylist = similarMovies.find(m => m.playlistIndex > movie.playlistIndex);
+      return nextInPlaylist || similarMovies[0]; // Hết playlist thì quay lại video đầu tiên trong list
+    }
+    // Nếu phim lẻ, phát video đầu tiên trong mục tương tự
+    return similarMovies[0];
+  }, [similarMovies, movie]);
 
   const similarRowRef = useRef(null);
 
@@ -333,16 +349,16 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
         const isEnded = (data.event === 'onStateChange' && data.info === 0) || 
                         (data.event === 'infoDelivery' && data.info?.playerState === 0);
 
-        if (isEnded && autoNext && similarMovies.length > 0) {
+        if (isEnded && autoNext && nextMovieForAutoPlay) {
           window.scrollTo(0, 0);
-          onMovieClick(similarMovies[0]);
+          onMovieClick(nextMovieForAutoPlay);
         }
       } catch (err) {}
     };
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [autoNext, similarMovies, onMovieClick]);
+  }, [autoNext, nextMovieForAutoPlay, onMovieClick]);
 
   return (
     <div className={isMiniPlayer 
@@ -447,7 +463,10 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete, isMiniP
         </div>
         
         <div className="w-full relative group">
-          <h3 className="text-lg md:text-xl font-bold text-white mb-4 md:mb-6">Nội dung tương tự</h3>
+          {/* Đổi tiêu đề UI dựa trên dữ liệu Playlist */}
+          <h3 className="text-lg md:text-xl font-bold text-white mb-4 md:mb-6">
+            {movie.playlistId ? 'Danh sách phát (Playlist)' : 'Nội dung tương tự'}
+          </h3>
           <div className="relative w-full overflow-hidden">
             {similarMovies.length > 0 && (
               <button 
@@ -501,7 +520,6 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
   const [isFull, setIsFull] = useState(false);
   
   const [channelId, setChannelId] = useState('');
-  // STATE MỚI cho Playlist
   const [playlistInput, setPlaylistInput] = useState(''); 
   
   const [apiKey, setApiKey] = useState('');
@@ -595,15 +613,17 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
 
         const newMovies = data.items
           .filter(item => item.id.videoId)
-          .filter(item => {
-             const isDupDb = existingMovies.some(m => m.videoId === item.id.videoId || m.title.toLowerCase().trim() === item.snippet.title.toLowerCase().trim());
-             const isDupLocal = allVideos.some(m => m.videoId === item.id.videoId || m.title.toLowerCase().trim() === item.snippet.title.toLowerCase().trim());
+          .map((item, index) => ({ item, index })) 
+          .filter(({item}) => {
+             const vidId = item.id.videoId;
+             const isDupDb = existingMovies.some(m => m.videoId === vidId || m.title.toLowerCase().trim() === item.snippet.title.toLowerCase().trim());
+             const isDupLocal = allVideos.some(m => m.videoId === vidId || m.title.toLowerCase().trim() === item.snippet.title.toLowerCase().trim());
              return !isDupDb && !isDupLocal;
           })
-          .map(item => {
+          .map(({item, index}) => {
              const isVideoFull = detectIsFull(item.snippet.title, item.snippet.description);
              return {
-              id: item.id.videoId + '_' + Date.now() + Math.random(),
+              id: Date.now() + '_' + (fetchedCount + index) + '_' + Math.random().toString(36).substr(2, 9),
               videoId: item.id.videoId,
               title: item.snippet.title,
               description: item.snippet.description,
@@ -632,7 +652,6 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
     }
   };
 
-  // HÀM MỚI: Tải từ Playlist
   const handleSubmitPlaylist = async (e) => {
     e.preventDefault();
     setError('');
@@ -666,21 +685,24 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
 
         const newMovies = data.items
           .filter(item => item.snippet.resourceId && item.snippet.resourceId.videoId)
-          .filter(item => {
+          .map((item, index) => ({ item, index })) 
+          .filter(({item}) => {
              const vidId = item.snippet.resourceId.videoId;
              const isDupDb = existingMovies.some(m => m.videoId === vidId || m.title.toLowerCase().trim() === item.snippet.title.toLowerCase().trim());
              const isDupLocal = allVideos.some(m => m.videoId === vidId || m.title.toLowerCase().trim() === item.snippet.title.toLowerCase().trim());
              return !isDupDb && !isDupLocal;
           })
-          .map(item => {
+          .map(({item, index}) => {
              const isVideoFull = detectIsFull(item.snippet.title, item.snippet.description);
              return {
-              id: item.snippet.resourceId.videoId + '_' + Date.now() + Math.random(),
+              id: Date.now() + '_' + (fetchedCount + index) + '_' + Math.random().toString(36).substr(2, 9),
               videoId: item.snippet.resourceId.videoId,
               title: item.snippet.title,
               description: item.snippet.description,
               category: category,
-              isFull: isVideoFull
+              isFull: isVideoFull,
+              playlistId: extractedPlaylistId,
+              playlistIndex: fetchedCount + index // Gắn chỉ mục để Auto-Next biết thứ tự tập
              };
           });
 
@@ -712,7 +734,6 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
           <button onClick={onClose} className="text-zinc-400 hover:text-white transition"><X size={20} className="md:w-6 md:h-6" /></button>
         </div>
         
-        {/* TABS MENU CẬP NHẬT 3 TÙY CHỌN */}
         <div className="flex border-b border-zinc-800 shrink-0">
           <button
             className={`flex-1 py-2 md:py-3 text-[11px] md:text-sm font-semibold transition ${activeTab === 'single' ? 'text-white border-b-2 border-red-600 bg-zinc-800/50' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/30'}`}
@@ -845,7 +866,6 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
             </form>
           )}
 
-          {/* FORM MỚI DÀNH CHO PLAYLIST */}
           {activeTab === 'playlist' && (
              <form onSubmit={handleSubmitPlaylist} className="flex flex-col gap-3 md:gap-4">
               <div className="text-[10px] md:text-xs text-blue-400 bg-blue-400/10 p-2 md:p-3 rounded border border-blue-400/20">
