@@ -825,14 +825,17 @@ useEffect(() => {
   };
 
   const filteredMovies = useMemo(() => {
-    return movies.filter(m => {
-      const matchCat = currentCategory === 'Tất cả' || m.category === currentCategory;
-      const matchSearch = m.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          (m.description || '').toLowerCase().includes(searchQuery.toLowerCase());
-      const matchFullStatus = showOnlyFull ? m.isFull === true : true;
-      return matchCat && matchSearch && matchFullStatus;
-    });
-  }, [movies, currentCategory, searchQuery, showOnlyFull]);
+  return movies.filter(m => {
+    const matchCat = currentCategory === 'Tất cả' || m.category === currentCategory;
+    const matchSearch = m.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                        (m.description || '').toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Ép chạy lại thuật toán kiểm tra thay vì dùng m.isFull của dữ liệu cũ
+    const matchFullStatus = showOnlyFull ? detectIsFull(m.title, m.description) : true;
+    
+    return matchCat && matchSearch && matchFullStatus;
+  });
+}, [movies, currentCategory, searchQuery, showOnlyFull]);
 
   const heroMovie = filteredMovies.length > 0 ? filteredMovies[0] : null;
 
