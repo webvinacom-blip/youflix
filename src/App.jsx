@@ -4,7 +4,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from 'firebase/firestore';
 import { getAnalytics } from "firebase/analytics";
 
-// --- Cấu hình Firebase của riêng bạn ---
+// --- Cấu hình Firebase ---
 const firebaseConfig = {
   apiKey: "AIzaSyCFHM0yidEmIRU0DgSsYr721J1QfRFQJ0M",
   authDomain: "youflix-shared.firebaseapp.com",
@@ -15,7 +15,6 @@ const firebaseConfig = {
   measurementId: "G-QGZG1IMPZR"
 };
 
-// Khởi tạo Firebase trực tiếp để dùng chung cho mọi người
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const auth = getAuth(app);
@@ -65,9 +64,7 @@ const getHighResThumbnail = (videoId) => `https://img.youtube.com/vi/${videoId}/
 const detectIsFull = (title, description = '') => {
   const keywords = ['trọn bộ', 'tập cuối', 'end', 'hoàn tất'];
   const textToScan = (title + ' ' + description).toLowerCase();
-  
   const fullRegex = /full(?!\s*(version|part|phần|tập|season|mùa|ss|p|pt|-)\s*\d+)(?!\s+\d{1,2}\b)/;
-  
   return fullRegex.test(textToScan) || keywords.some(kw => textToScan.includes(kw));
 };
 
@@ -97,12 +94,12 @@ function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel }) {
   );
 }
 
+// Bổ sung onNavigate để Navbar đóng DetailView khi bấm chuyển kênh
 function Navbar({ categories, currentCategory, setCategory, searchQuery, setSearchQuery, onOpenAdd, showOnlyFull, setShowOnlyFull, onNavigate }) {
-  // Hàm xử lý chung khi bấm chuyển kênh
   const handleNavClick = (cat) => {
     setCategory(cat);
-    setSearchQuery(''); // Xóa text tìm kiếm (nếu có) để về đúng kênh
-    if (onNavigate) onNavigate(); // Đóng màn hình xem phim (nếu đang mở)
+    setSearchQuery('');
+    if (onNavigate) onNavigate(); // Báo về App để đóng trang xem phim
   };
 
   return (
@@ -158,6 +155,54 @@ function Navbar({ categories, currentCategory, setCategory, searchQuery, setSear
   );
 }
 
+function Hero({ movie, onPlay }) {
+  if (!movie) return null;
+  
+  return (
+    <div className="relative w-full h-[60vh] md:h-[70vh] min-h-[400px] md:min-h-[500px] mb-6 md:mb-8">
+      <div className="absolute inset-0 w-full h-full">
+        <img 
+          src={getHighResThumbnail(movie.videoId)} 
+          alt={movie.title}
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#141414]/90 md:from-black/80 via-black/40 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/40 md:via-transparent to-transparent"></div>
+      </div>
+      
+      <div className="absolute bottom-[10%] md:bottom-[15%] left-4 md:left-16 max-w-2xl px-4 md:px-0">
+        <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-2 md:mb-4">
+          <span className="text-green-500 font-bold text-xs md:text-sm">98% Phù hợp</span>
+          <span className="border border-zinc-500 text-zinc-300 text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-sm">4K</span>
+          {movie.isFull && <span className="bg-red-600 text-white text-[10px] md:text-xs font-bold px-1.5 md:px-2 py-0.5 rounded-sm uppercase tracking-wider">Đã Full</span>}
+          <span className="text-zinc-300 text-xs md:text-sm">{movie.category}</span>
+        </div>
+        <h2 className="text-3xl md:text-6xl font-bold text-white mb-2 md:mb-4 leading-tight shadow-sm line-clamp-2">
+          {movie.title}
+        </h2>
+        <p className="text-sm md:text-lg text-zinc-300 mb-4 md:mb-8 line-clamp-3 max-w-xl text-shadow">
+          {movie.description || "Một tuyệt tác đáng xem trên nền tảng của chúng tôi. Hãy tận hưởng những giây phút giải trí tuyệt vời."}
+        </p>
+        
+        <div className="flex gap-2 md:gap-4">
+          <button 
+            onClick={() => onPlay(movie)}
+            className="flex items-center gap-1 md:gap-2 bg-white text-black px-4 md:px-8 py-1.5 md:py-2.5 rounded hover:bg-white/80 transition font-bold text-sm md:text-lg"
+          >
+            <Play size={18} className="md:w-6 md:h-6" fill="currentColor" /> Phát ngay
+          </button>
+          <button 
+            onClick={() => onPlay(movie)}
+            className="flex items-center gap-1 md:gap-2 bg-zinc-500/50 text-white px-4 md:px-8 py-1.5 md:py-2.5 rounded hover:bg-zinc-500/70 transition font-bold text-sm md:text-lg backdrop-blur-sm"
+          >
+            <Info size={18} className="md:w-6 md:h-6" /> Chi tiết
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MovieCard({ movie, onClick, onDelete, className = "flex-none w-[140px] sm:w-[160px] md:w-64" }) {
   return (
     <div 
@@ -195,7 +240,6 @@ function MovieCard({ movie, onClick, onDelete, className = "flex-none w-[140px] 
   );
 }
 
-// Bổ sung nút Xóa kênh vào hàng phim
 function MovieRow({ title, movies, onMovieClick, onDeleteMovie, onDeleteCategory }) {
   if (movies.length === 0) return null;
   
@@ -232,6 +276,7 @@ function MovieRow({ title, movies, onMovieClick, onDeleteMovie, onDeleteCategory
   );
 }
 
+// Thiết kế chuẩn không đè video: spacer > button > video
 function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete }) {
   const similarMovies = useMemo(() => {
     return allMovies
@@ -253,11 +298,11 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete }) {
   return (
     <div className="fixed inset-0 z-[40] bg-[#141414] overflow-y-auto">
       
-      {/* Khoảng trống phía trên nhường chỗ cho Navbar hiển thị */}
+      {/* 1. Khoảng đệm chiều cao để tránh Navbar che khuất nội dung */}
       <div className="w-full h-16 md:h-20 shrink-0"></div>
 
-      {/* Khu vực chứa nút Quay lại (Nằm độc lập trên video, sát lề trái) */}
-      <div className="w-full px-4 md:px-6 py-2 md:py-3 flex items-start">
+      {/* 2. Hàng chứa nút Quay lại nằm ĐỘC LẬP phía trên video */}
+      <div className="w-full px-4 md:px-6 py-2 flex items-start">
         <button 
           onClick={onClose}
           className="flex items-center gap-1.5 md:gap-2 text-white bg-zinc-800 hover:bg-zinc-700 px-3 md:px-4 py-1.5 md:py-2 rounded-full transition text-xs md:text-sm font-medium border border-zinc-700 shadow-md cursor-pointer"
@@ -266,10 +311,10 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete }) {
         </button>
       </div>
 
-      {/* Khung chiếu video (Tự động được đẩy xuống dưới nút Quay lại, không bao giờ bị đè) */}
+      {/* 3. Khung phát video YouTube (tự động đẩy xuống dưới nút bấm) */}
       <div className="w-full h-[35vh] sm:h-[50vh] lg:h-[80vh] bg-black">
         <iframe 
-          src={`https://www.youtube.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_load_policy=0&iv_load_policy=3&cc_lang_pref=none&modestbranding=1&playsinline=1&showinfo=0&controls=1&fs=1&disablekb=0&enablejsapi=1&origin=${window.location.origin}`}
+          src={`https://www.youtube.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_load_policy=0&iv_load_policy=3&cc_lang_pref=en&modestbranding=1&playsinline=1&showinfo=0&controls=1&fs=1&disablekb=0&enablejsapi=1&origin=${window.location.origin}`}
           title={movie.title}
           className="w-full h-full border-0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -277,7 +322,6 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete }) {
         ></iframe>
       </div>
 
-      {/* Phần thông tin chi tiết */}
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-12 flex flex-col gap-8 md:gap-12">
         <div>
           <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-3 md:mb-4">
@@ -312,7 +356,6 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete }) {
           </div>
         </div>
         
-        {/* Danh sách phim tương tự */}
         <div className="w-full relative group">
           <h3 className="text-lg md:text-xl font-bold text-white mb-4 md:mb-6">Nội dung tương tự</h3>
           <div className="relative w-full overflow-hidden">
@@ -636,22 +679,7 @@ function AddMovieModal({ categories, onClose, onAddMovies, existingMovies }) {
 // --- Main App ---
 
 export default function App() {
-  useEffect(() => {
-    if (!useCloud || !auth) return;
-
-    const initAuth = async () => {
-      try {
-        await signInAnonymously(auth);
-      } catch (error) {
-        console.error("Lỗi xác thực ẩn danh:", error);
-      }
-    };
-    initAuth();
-    
-    const unsubscribe = onAuthStateChanged(auth, setUser);
-    return () => unsubscribe();
-  }, []);
-
+  // Lấy dữ liệu ngay khi khởi tạo state
   const [movies, setMovies] = useState(() => {
     if (!useCloud) {
       const saved = localStorage.getItem('youflix_movies_v2');
@@ -663,37 +691,12 @@ export default function App() {
     return [];
   });
 
-  useEffect(() => {
-    if (!db) return;
-
-    const moviesCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'movies');
-    
-    const unsubscribe = onSnapshot(moviesCollectionRef, (snapshot) => {
-      const cloudMovies = [];
-      snapshot.forEach((doc) => {
-        cloudMovies.push(doc.data());
-      });
-      
-      if (cloudMovies.length > 0) {
-        cloudMovies.sort((a, b) => Number(b.id) - Number(a.id));
-        setMovies(cloudMovies);
-      }
-    }, (error) => {
-      console.error("Lỗi đọc dữ liệu từ Firestore:", error);
-    });
-
-    return () => unsubscribe();
-  }, [db, appId]);
-  
   const [currentCategory, setCategory] = useState('Tất cả');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [movieToDelete, setMovieToDelete] = useState(null);
-  
-  // STATE MỚI: Xử lý chức năng xóa Kênh
   const [categoryToDelete, setCategoryToDelete] = useState(null);
-  
   const [showOnlyFull, setShowOnlyFull] = useState(false);
   const [user, setUser] = useState(null);
 
@@ -702,39 +705,26 @@ export default function App() {
     return ['Tất cả', ...Array.from(uniqueCats)];
   }, [movies]);
 
+  // Hook 1: Xử lý Xác thực (Chỉ chạy 1 lần)
   useEffect(() => {
-    if (!useCloud) {
-      localStorage.setItem('youflix_movies_v2', JSON.stringify(movies));
-      return;
-    }
-
-    const initAuth = async () => {
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-      } catch (error) {
-        console.error("Lỗi xác thực:", error);
-      }
-    };
-    initAuth();
+    if (!useCloud || !auth) return;
+    
+    signInAnonymously(auth).catch(error => console.error("Lỗi xác thực:", error));
     
     const unsubscribe = onAuthStateChanged(auth, setUser);
     return () => unsubscribe();
-  }, [movies]);
+  }, []);
 
+  // Hook 2: Fetch dữ liệu từ Firebase
   useEffect(() => {
-    if (!useCloud || !user) return;
+    if (!useCloud || !db) return;
 
     const moviesRef = collection(db, 'artifacts', appId, 'public', 'data', 'movies');
-    
     const unsubscribe = onSnapshot(moviesRef, (snapshot) => {
-      if (snapshot.empty) {
+      if (snapshot.empty && movies.length === 0) {
+        // Lần đầu chạy chưa có data trên Firebase thì đẩy data mặc định lên
         initialMovies.forEach(async (movie) => {
-          const movieDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'movies', movie.id);
-          await setDoc(movieDocRef, movie);
+          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'movies', movie.id), movie);
         });
       } else {
         const loadedMovies = [];
@@ -750,6 +740,13 @@ export default function App() {
 
     return () => unsubscribe();
   }, [user]);
+
+  // Hook 3: Đồng bộ LocalStorage (Nếu không dùng cloud)
+  useEffect(() => {
+    if (!useCloud) {
+      localStorage.setItem('youflix_movies_v2', JSON.stringify(movies));
+    }
+  }, [movies]);
   
   const handleAddMovies = async (newMovies) => {
     if (db) {
@@ -790,7 +787,6 @@ export default function App() {
     }
   };
 
-  // FUNCTION MỚI: Xử lý xóa toàn bộ phim trong kênh (thể loại)
   const confirmDeleteCategory = async () => {
     if (categoryToDelete) {
       const moviesInCat = movies.filter(m => m.category === categoryToDelete);
@@ -819,9 +815,7 @@ export default function App() {
       const matchCat = currentCategory === 'Tất cả' || m.category === currentCategory;
       const matchSearch = m.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           (m.description || '').toLowerCase().includes(searchQuery.toLowerCase());
-      
       const matchFullStatus = showOnlyFull ? detectIsFull(m.title, m.description) : true;
-      
       return matchCat && matchSearch && matchFullStatus;
     });
   }, [movies, currentCategory, searchQuery, showOnlyFull]);
@@ -839,7 +833,7 @@ export default function App() {
         onOpenAdd={() => setIsAddModalOpen(true)}
         showOnlyFull={showOnlyFull}
         setShowOnlyFull={setShowOnlyFull}
-        onNavigate={() => setSelectedMovie(null)} // Thêm dòng này để sửa lỗi "không vào được kênh"
+        onNavigate={() => setSelectedMovie(null)} 
       />
 
       <main className="pb-20">
@@ -856,7 +850,7 @@ export default function App() {
                 movies={catMovies} 
                 onMovieClick={setSelectedMovie} 
                 onDeleteMovie={handleDeleteRequest} 
-                onDeleteCategory={setCategoryToDelete} // Truyền hàm xóa kênh vào
+                onDeleteCategory={setCategoryToDelete}
               />
             })
           ) : (
@@ -867,7 +861,6 @@ export default function App() {
                   {showOnlyFull && <span className="bg-red-600 text-white text-[10px] md:text-xs px-2 py-1 rounded uppercase tracking-wider">Đã Full</span>}
                 </h2>
                 
-                {/* Nút xóa Kênh khi đang xem một danh mục cụ thể */}
                 {!searchQuery && currentCategory !== 'Tất cả' && (
                   <button
                     onClick={() => setCategoryToDelete(currentCategory)}
@@ -937,7 +930,6 @@ export default function App() {
         />
       )}
 
-      {/* Modal xác nhận xóa Video lẻ */}
       <ConfirmDialog 
         isOpen={!!movieToDelete}
         title="Xác nhận xóa phim"
@@ -946,7 +938,6 @@ export default function App() {
         onCancel={() => setMovieToDelete(null)}
       />
       
-      {/* Modal xác nhận xóa Toàn bộ Kênh */}
       <ConfirmDialog 
         isOpen={!!categoryToDelete}
         title="Xác nhận xóa kênh"
