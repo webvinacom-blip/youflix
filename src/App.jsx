@@ -286,38 +286,47 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-[#141414] overflow-y-auto">
-      <button 
-        onClick={onClose}
-        className="fixed top-4 md:top-6 left-4 md:left-6 z-[110] flex items-center gap-1 md:gap-2 text-white bg-black/50 hover:bg-black/80 px-3 md:px-4 py-1.5 md:py-2 rounded-full backdrop-blur transition text-xs md:text-base"
-      >
-        <ChevronLeft size={18} className="md:w-5 md:h-5" /> Quay lại
-      </button>
+    // 1. Thêm pt-20 md:pt-24 để đẩy toàn bộ trang chi tiết xuống dưới thanh Menu cố định
+    <div className="fixed inset-0 z-[110] bg-[#141414] overflow-y-auto pt-20 md:pt-24">
       
-      <div className="w-full h-[35vh] sm:h-[50vh] lg:h-[80vh] bg-black">
-        <iframe 
-          src={`https://www.youtube.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_load_policy=0&iv_load_policy=3`}
-          title={movie.title}
-          className="w-full h-full border-0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowFullScreen
-        ></iframe>
+      {/* 2. Khung chứa video và nút Quay lại */}
+      <div className="relative w-full max-w-6xl mx-auto px-4 md:px-8 mb-4">
+        
+        {/* Nút Quay lại nằm gọn gàng phía trên khung video, không bị đè */}
+        <button 
+          onClick={onClose}
+          className="mb-3 flex items-center gap-1.5 md:gap-2 text-white bg-black/60 hover:bg-black/90 px-3 md:px-4 py-1.5 rounded-full backdrop-blur transition text-xs md:text-sm font-medium w-fit border border-zinc-700 shadow-md"
+        >
+          <ChevronLeft size={16} className="md:w-4 md:h-4" /> Quay lại trang chủ
+        </button>
+
+        {/* Khung phát video YouTube */}
+        <div className="w-full h-[35vh] sm:h-[50vh] lg:h-[70vh] bg-black rounded-lg overflow-hidden shadow-2xl border border-zinc-800">
+          <iframe 
+            src={`https://www.youtube.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_load_policy=0&iv_load_policy=3`}
+            title={movie.title}
+            className="w-full h-full border-0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+          ></iframe>
+        </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-12 flex flex-col gap-8 md:gap-12">
+      {/* Phần thông tin chi tiết và phim tương tự bên dưới */}
+      <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 flex flex-col gap-8">
         <div>
-          <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-3 md:mb-4">
-            <span className="text-green-500 font-bold text-sm md:text-lg">Độ phân giải cao</span>
-            <span className="border border-zinc-500 text-zinc-300 text-xs md:text-sm px-1.5 md:px-2 py-0.5 rounded-sm">4K</span>
+          <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-3">
+            <span className="text-green-500 font-bold text-sm md:text-base">Độ phân giải cao</span>
+            <span className="border border-zinc-500 text-zinc-300 text-xs px-2 py-0.5 rounded-sm">4K</span>
             {movie.isFull && (
-              <span className="bg-red-600 text-white font-bold text-xs md:text-sm px-1.5 md:px-2 py-0.5 rounded-sm uppercase flex items-center gap-1">
+              <span className="bg-red-600 text-white font-bold text-xs px-2 py-0.5 rounded-sm uppercase flex items-center gap-1">
                 <CheckCircle size={14}/> Đã Full
               </span>
             )}
-            <span className="bg-zinc-800 text-white text-xs md:text-sm px-2 md:px-3 py-1 rounded-full">{movie.category}</span>
+            <span className="bg-zinc-800 text-white text-xs px-3 py-1 rounded-full">{movie.category}</span>
           </div>
-          <h1 className="text-2xl md:text-5xl font-bold text-white mb-3 md:mb-6">{movie.title}</h1>
-          <p className="text-sm md:text-lg text-zinc-300 leading-relaxed mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-4xl font-bold text-white mb-3">{movie.title}</h1>
+          <p className="text-sm md:text-base text-zinc-300 leading-relaxed mb-6">
             {movie.description || "Chưa có thông tin mô tả chi tiết cho video này."}
           </p>
           <div className="flex flex-wrap gap-4 items-center">
@@ -325,34 +334,26 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete }) {
               href={`https://www.youtube.com/watch?v=${movie.videoId}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 md:gap-2 text-zinc-400 hover:text-white transition text-sm md:text-base"
+              className="inline-flex items-center gap-2 text-zinc-400 hover:text-white transition text-sm"
             >
               Mở trên YouTube
             </a>
             <button 
               onClick={() => onDelete(movie.id)}
-              className="inline-flex items-center gap-1.5 md:gap-2 text-red-500 hover:text-red-400 transition text-sm md:text-base"
+              className="inline-flex items-center gap-2 text-red-500 hover:text-red-400 transition text-sm"
             >
-              <Trash2 size={16} className="md:w-[18px] md:h-[18px]" /> Xóa phim này
+              <Trash2 size={16} /> Xóa phim này
             </button>
           </div>
         </div>
         
-        <div className="w-full relative group">
-          <h3 className="text-lg md:text-xl font-bold text-white mb-4 md:mb-6">Nội dung tương tự</h3>
+        {/* Danh sách phim tương tự */}
+        <div className="w-full relative group pb-12">
+          <h3 className="text-lg md:text-xl font-bold text-white mb-4">Nội dung tương tự</h3>
           <div className="relative w-full overflow-hidden">
-            {similarMovies.length > 0 && (
-              <button 
-                onClick={() => handleScroll('left')}
-                className="absolute left-0 top-0 bottom-4 w-8 md:w-12 bg-black/50 hover:bg-black/80 text-white z-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex rounded-r-md"
-              >
-                <ChevronLeft size={24} className="md:w-8 md:h-8" />
-              </button>
-            )}
-            
             <div 
               ref={similarRowRef}
-              className="flex gap-2 md:gap-4 overflow-x-auto pb-4 no-scrollbar scroll-smooth snap-x snap-mandatory"
+              className="flex gap-3 md:gap-4 overflow-x-auto pb-4 no-scrollbar scroll-smooth snap-x snap-mandatory"
             >
               {similarMovies.length > 0 ? (
                 similarMovies.map(m => (
@@ -361,7 +362,6 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete }) {
                     movie={m} 
                     onClick={(movie) => { window.scrollTo(0,0); onMovieClick(movie); }} 
                     onDelete={onDelete}
-                    // Giữ nguyên responsive mặc định của component cho phần này
                     className="flex-none w-[140px] sm:w-[160px] md:w-64 snap-start"
                   />
                 ))
@@ -369,15 +369,6 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete }) {
                 <p className="text-zinc-500 text-sm">Không có phim cùng thể loại.</p>
               )}
             </div>
-
-            {similarMovies.length > 0 && (
-              <button 
-                onClick={() => handleScroll('right')}
-                className="absolute right-0 top-0 bottom-4 w-8 md:w-12 bg-black/50 hover:bg-black/80 text-white z-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex rounded-l-md"
-              >
-                <ChevronRight size={24} className="md:w-8 md:h-8" />
-              </button>
-            )}
           </div>
         </div>
       </div>
