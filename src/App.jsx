@@ -205,8 +205,8 @@ function MovieCard({ movie, onClick, onDelete }) {
     >
       <img 
         src={getThumbnail(movie.videoId)} 
-        alt={movie.title} 
-        className="w-full h-full object-cover" 
+        alt={movie.title}
+        className="w-full h-full object-cover"
         loading="lazy"
       />
       {movie.isFull && (
