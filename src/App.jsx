@@ -242,7 +242,7 @@ function MovieRow({ title, movies, onMovieClick, onDeleteMovie }) {
       <h2 className="text-xl font-bold text-white mb-4 px-8">{title}</h2>
       {/* Khung hiển thị phim dạng cuộn dọc, flex-wrap, giới hạn chiều cao 2 dòng */}
       <div 
-        className="flex flex-wrap gap-4 pb-4 px-8 max-h-[350px] overflow-x-auto scroll-smooth"
+        className="grid grid-rows-2 grid-flow-col auto-cols-[180px] md:auto-cols-[220px] gap-4 pb-4 px-8 overflow-x-auto scroll-smooth w-full"
         style={{ scrollbarWidth: 'thin' }}
       >
         {movies.map(movie => (
