@@ -99,9 +99,9 @@ function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel }) {
   );
 }
 
-function Navbar({ categories, currentCategory, setCategory, searchQuery, setSearchQuery, onOpenAdd, showOnlyFull, setShowOnlyFull, isDetailView }) {
+function Navbar({ categories, currentCategory, setCategory, searchQuery, setSearchQuery, onOpenAdd, showOnlyFull, setShowOnlyFull }) {
   return (
-    <nav className={`fixed top-0 w-full ${isDetailView ? 'z-[120]' : 'z-50'} bg-gradient-to-b from-black/90 to-transparent pb-3 md:pb-4 pt-3 md:pt-4 px-4 md:px-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-4 transition-all duration-300`}>
+    <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/90 to-transparent pb-3 md:pb-4 pt-3 md:pt-4 px-4 md:px-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-4 transition-all duration-300">
       <div className="flex items-center gap-4 md:gap-8 w-full md:w-auto overflow-hidden">
         <h1 className="text-red-600 font-black text-2xl md:text-3xl tracking-tighter cursor-pointer shrink-0" onClick={() => setCategory('Tất cả')}>
           YOUFLIX
@@ -288,7 +288,7 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete }) {
   return (
     <div className="fixed inset-0 z-[100] bg-[#141414] overflow-y-auto">
       {/* Thanh header chứa nút Quay lại nằm phía trên video */}
-      <div className="sticky top-0 z-[110] w-full bg-[#141414]/95 backdrop-blur px-4 md:px-6 pt-28 md:pt-20 pb-3 md:pb-4 flex items-center">
+      <div className="sticky top-0 z-[110] w-full bg-[#141414]/95 backdrop-blur px-4 md:px-6 py-3 md:py-4 flex items-center">
         <button
           onClick={onClose}
           className="inline-flex items-center gap-1 md:gap-2 text-white bg-white/10 hover:bg-white/20 px-3 md:px-4 py-1.5 md:py-2 rounded-full transition text-xs md:text-base"
@@ -854,7 +854,6 @@ useEffect(() => {
         onOpenAdd={() => setIsAddModalOpen(true)}
         showOnlyFull={showOnlyFull}
         setShowOnlyFull={setShowOnlyFull}
-        isDetailView={!!selectedMovie}
       />
 
       <main className="pb-20">
