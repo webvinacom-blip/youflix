@@ -238,11 +238,13 @@ function MovieRow({ title, movies, onMovieClick, onDeleteMovie }) {
   if (movies.length === 0) return null;
   
   return (
-    <div className="mb-8 relative">
+    // 1. Thêm w-full và overflow-hidden vào thẻ cha ngoài cùng để ngăn chặn tràn trang
+    <div className="mb-8 relative w-full overflow-hidden">
       <h2 className="text-xl font-bold text-white mb-4 px-8">{title}</h2>
-      {/* Khung hiển thị phim dạng cuộn dọc, flex-wrap, giới hạn chiều cao 2 dòng */}
+      
+      {/* 2. Thêm w-full vào thẻ lưới và thiết lập auto-cols co giãn theo kích thước màn hình */}
       <div 
-        className="grid grid-rows-2 grid-flow-col auto-cols-[200px] gap-4 pb-4 px-8 overflow-x-auto scroll-smooth"
+        className="grid grid-rows-2 grid-flow-col auto-cols-[140px] sm:auto-cols-[160px] md:auto-cols-[200px] gap-4 pb-4 px-8 overflow-x-auto scroll-smooth w-full"
         style={{ scrollbarWidth: 'thin' }}
       >
         {movies.map(movie => (
