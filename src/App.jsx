@@ -295,7 +295,6 @@ function DetailView({ movie, allMovies, onClose, onMovieClick, onDelete }) {
       </button>
       
       <div className="w-full h-[35vh] sm:h-[50vh] lg:h-[80vh] bg-black">
-        <div className="w-full h-[35vh] sm:h-[50vh] lg:h-[80vh] bg-black">
   <iframe
     src={`https://www.youtube-nocookie.com/embed/${movie.videoId}?autoplay=1&rel=0&cc_lang_pref=none&hl=en`}
     title={movie.title}
