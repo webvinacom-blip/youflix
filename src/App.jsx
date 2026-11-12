@@ -238,12 +238,11 @@ function MovieRow({ title, movies, onMovieClick, onDeleteMovie }) {
   if (movies.length === 0) return null;
   
   return (
-    // Bổ sung min-w-0 và max-w-full vào đây
-    <div className="mb-8 relative w-full min-w-0 max-w-full">
+    <div className="mb-8 relative">
       <h2 className="text-xl font-bold text-white mb-4 px-8">{title}</h2>
-      
+      {/* Khung hiển thị phim dạng cuộn dọc, flex-wrap, giới hạn chiều cao 2 dòng */}
       <div 
-        className="grid grid-rows-2 grid-flow-col auto-cols-[140px] sm:auto-cols-[160px] md:auto-cols-[200px] gap-4 pb-4 px-8 overflow-x-auto scroll-smooth w-full"
+        className="grid grid-rows-2 grid-flow-col auto-cols-[200px] gap-4 pb-4 px-8 overflow-x-auto scroll-smooth"
         style={{ scrollbarWidth: 'thin' }}
       >
         {movies.map(movie => (
@@ -825,7 +824,7 @@ useEffect(() => {
   const heroMovie = filteredMovies.length > 0 ? filteredMovies[0] : null;
 
   return (
-    <div className="min-h-screen bg-[#141414] text-white overflow-x-hidden font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-[#141414] text-white overflow-x-hidden font-sans">
       <Navbar 
         categories={dynamicCategories}
         currentCategory={currentCategory} 
